@@ -29,6 +29,16 @@ let S = Object.assign({}, MAC_DINH);
 function doc() {
   try { const r = localStorage.getItem(KHOA); if (r) S = Object.assign({}, MAC_DINH, JSON.parse(r)); }
   catch (e) {}
+  /* người thêm từ trước chưa có giới tính — đoán theo quan hệ, mặc định là nữ */
+  let doi = false;
+  S.nguoi.forEach(n => {
+    if (n.gioi) return;
+    const t = boDau(n.qh || "");
+    n.gioi = /(trai|re|cha|bo |anh |chu |cau |bac |ong|chong)/.test(t) ? "nam" : "nu";
+    if (n.giong === undefined) n.giong = S.giong || "";
+    doi = true;
+  });
+  if (doi) luu();
 }
 function luu() { try { localStorage.setItem(KHOA, JSON.stringify(S)); } catch (e) {} }
 
@@ -330,6 +340,44 @@ function nhatGiong() {
   try { giongCo = (window.speechSynthesis.getVoices() || []).filter(v => v.lang && /^vi/i.test(v.lang)); }
   catch (e) { giongCo = []; }
 }
+
+/* Đoán giọng nam hay nữ từ tên giọng.
+   Cái bẫy: tên giọng tiếng Việt nào cũng chứa "Vietnam" / "Việt Nam", mà "nam"
+   lại đúng là từ chỉ giới tính — không gạt đi trước thì mọi giọng đều thành nam. */
+const DAU_NU  = ["hoaimy", "hoai my", "linh", "mai", "lan", "ngoc", "thu", "huong",
+                 "female", "woman", "girl", "nu",
+                 "standard-a", "standard-c", "wavenet-a", "wavenet-c", "neural2-a", "neural2-c"];
+const DAU_NAM = ["namminh", "nam minh", "minh", "long", "hung", "tuan", "an",
+                 "male", "man", "boy",
+                 "standard-b", "standard-d", "wavenet-b", "wavenet-d", "neural2-b", "neural2-d"];
+
+function doanGioiGiong(ten) {
+  const t = boDau(String(ten || "")).replace(/vietnamese|viet ?nam|vi[-_ ]?vn/g, " ");
+  const co = ds => ds.some(k => k.length <= 3 ? new RegExp("\\b" + k + "\\b").test(t) : t.indexOf(k) >= 0);
+  if (co(DAU_NU)) return "nu";    // xét nữ trước: "woman" có chứa "man"
+  if (co(DAU_NAM)) return "nam";
+  return "";
+}
+const TEN_GIOI = { nu: "nữ", nam: "nam" };
+
+function giongChoNguoi(ng) {
+  if (!giongCo.length) return null;
+  if (ng && ng.giong) { const v = giongCo.find(x => x.name === ng.giong); if (v) return v; }
+  if (ng && ng.gioi) { const v = giongCo.find(x => doanGioiGiong(x.name) === ng.gioi); if (v) return v; }
+  return giongCo[0];
+}
+
+/* Máy chỉ có một giọng tiếng Việt là chuyện rất thường trên điện thoại.
+   Khi giọng không đúng giới, kéo cao độ cho nghiêng về phía cần — không
+   thành thật nhưng đỡ lệch hẳn. Kéo vừa phải thôi, quá tay nghe như máy. */
+function caoDoChoNguoi(ng) {
+  if (!ng || !ng.gioi) return 1;
+  const v = giongChoNguoi(ng);
+  const g = v ? doanGioiGiong(v.name) : "";
+  if (g === ng.gioi) return ng.gioi === "nu" ? 1.06 : 0.96;
+  if (!g)            return ng.gioi === "nu" ? 1.15 : 0.88;
+  return ng.gioi === "nu" ? 1.25 : 0.78;
+}
 try { window.speechSynthesis.onvoiceschanged = () => { nhatGiong(); veDsGiong(); }; nhatGiong(); } catch (e) {}
 
 function noi(text, xong) {
@@ -340,8 +388,9 @@ function noi(text, xong) {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "vi-VN";
     u.rate = (CHINH_SACH[S.muc] || CHINH_SACH.vua).toc;
-    u.pitch = 1.05;
-    const g = giongCo.find(v => v.name === S.giong) || giongCo[0];
+    const ng = nguoiDangChon();
+    u.pitch = caoDoChoNguoi(ng);
+    const g = giongChoNguoi(ng);
     if (g) u.voice = g;
     u.onend = () => { if (xong) xong(); };
     u.onerror = () => { if (xong) xong(); };
@@ -723,6 +772,8 @@ function chuyenMan(ten) {
   window.scrollTo(0, 0);
 }
 
+function matThay(ng) { return ng && ng.gioi === "nam" ? "👨" : "👩"; }
+
 function veAnh(o, ng, tron) {
   o.innerHTML = "";
   if (ng && ng.anh) {
@@ -730,7 +781,7 @@ function veAnh(o, ng, tron) {
     im.className = "anh-to"; im.src = ng.anh; im.alt = ng.ten || "Ảnh người thân";
     o.appendChild(im);
   } else {
-    o.appendChild(el("div", "anh-thay", tron ? "🧑" : "👨‍👩‍👧‍👦"));
+    o.appendChild(el("div", "anh-thay", ng ? matThay(ng) : "👨‍👩‍👧‍👦"));
   }
 }
 
@@ -753,17 +804,44 @@ const TA_MUC = {
 function veDsGiong() {
   const s = $("#nGiong");
   if (!s) return;
+  const ng = nguoiDangChon();
+  $("#tenGiong").textContent = ng ? ng.ten : "người trò chuyện";
+
   s.innerHTML = "";
   if (!giongCo.length) {
     s.appendChild(el("option", null, "Giọng mặc định của máy"));
+    $("#matGiong").textContent =
+      "Máy chưa thấy giọng tiếng Việt nào. Trên Android: Cài đặt → Ngôn ngữ → " +
+      "Đầu ra giọng nói → tải thêm tiếng Việt. Trên iPhone: Cài đặt → Trợ năng → Nội dung đọc.";
+    $("#matGiong").style.color = "var(--am)";
     return;
   }
+
+  const dangDung = giongChoNguoi(ng);
+  s.appendChild(Object.assign(el("option", null, "Tự chọn theo giới tính"), { value: "" }));
   giongCo.forEach(v => {
-    const o = el("option", null, v.name);
+    const g = doanGioiGiong(v.name);
+    const o = el("option", null, v.name + (g ? " — giọng " + TEN_GIOI[g] : " — chưa rõ nam nữ"));
     o.value = v.name;
-    if (v.name === S.giong) o.selected = true;
+    if (ng && ng.giong === v.name) o.selected = true;
     s.appendChild(o);
   });
+
+  /* nói thẳng tình trạng, đừng để người nhà ngồi đoán vì sao giọng nghe lạ */
+  const m = $("#matGiong");
+  if (!ng) { m.textContent = "Chưa chọn người trò chuyện."; m.style.color = "var(--muted)"; return; }
+  const gDung = dangDung ? doanGioiGiong(dangDung.name) : "";
+  const coHop = giongCo.some(v => doanGioiGiong(v.name) === ng.gioi);
+  if (coHop && gDung === ng.gioi) {
+    m.textContent = "Đang dùng giọng " + TEN_GIOI[ng.gioi] + " cho " + ng.ten + ". Nghe thử bên dưới.";
+    m.style.color = "var(--muted)";
+  } else {
+    m.textContent = "Máy này không có giọng " + TEN_GIOI[ng.gioi] + " tiếng Việt. " +
+      "App đã chỉnh cao độ cho nghiêng về giọng " + TEN_GIOI[ng.gioi] +
+      ", nhưng muốn tự nhiên hơn thì nên cài thêm giọng tiếng Việt " + TEN_GIOI[ng.gioi] +
+      " trong cài đặt của máy.";
+    m.style.color = "var(--am)";
+  }
 }
 
 function veDsNguoi() {
@@ -776,19 +854,26 @@ function veDsNguoi() {
   S.nguoi.forEach((n, i) => {
     const t = el("div", "the-nguoi" + (i === S.chon ? " chon" : ""));
     if (n.anh) { const im = document.createElement("img"); im.src = n.anh; im.alt = n.ten; t.appendChild(im); }
-    else t.appendChild(el("div", "mat", "🧑"));
+    else t.appendChild(el("div", "mat", matThay(n)));
     t.appendChild(el("div", "tn", n.ten));
-    t.appendChild(el("div", "qh", n.qh || ""));
+    t.appendChild(el("div", "qh", (n.qh ? n.qh + " · " : "") + TEN_GIOI[n.gioi || "nu"]));
     const nut = el("div", "nut");
+    const bGioi = el("button", null, n.gioi === "nam" ? "→ nữ" : "→ nam");
+    bGioi.title = "Đổi giới tính để chọn giọng cho hợp";
+    bGioi.onclick = () => {
+      n.gioi = n.gioi === "nam" ? "nu" : "nam";
+      n.giong = "";                      // bỏ giọng đã chọn tay, để tự chọn lại cho hợp
+      luu(); veDsNguoi(); veTrangChinh(); veDsGiong();
+    };
     const bChon = el("button", null, i === S.chon ? "Đang chọn" : "Chọn");
-    bChon.onclick = () => { S.chon = i; luu(); veDsNguoi(); veTrangChinh(); };
+    bChon.onclick = () => { S.chon = i; luu(); veDsNguoi(); veTrangChinh(); veDsGiong(); };
     const bXoa = el("button", null, "Xóa");
     bXoa.onclick = () => {
       S.nguoi.splice(i, 1);
       if (S.chon >= S.nguoi.length) S.chon = 0;
       luu(); veDsNguoi(); veTrangChinh();
     };
-    nut.appendChild(bChon); nut.appendChild(bXoa);
+    nut.appendChild(bChon); nut.appendChild(bGioi); nut.appendChild(bXoa);
     t.appendChild(nut);
     o.appendChild(t);
   });
@@ -947,7 +1032,18 @@ document.querySelectorAll("#baMuc button").forEach(b => {
   b.onclick = () => { S.muc = b.dataset.m; luu(); veGocNha(); };
 });
 $("#nGoi").onchange = e => { S.goi = e.target.value; luu(); veTrangChinh(); };
-$("#nGiong").onchange = e => { S.giong = e.target.value; luu(); };
+$("#nGiong").onchange = e => {
+  const ng = nguoiDangChon();
+  if (ng) { ng.giong = e.target.value; luu(); veDsGiong(); }
+};
+$("#nGioi").onchange = () => { $("#nGioi").dataset.tay = "1"; };
+/* đoán sẵn giới tính từ quan hệ, người nhà vẫn sửa được */
+$("#nQh").oninput = () => {
+  if ($("#nGioi").dataset.tay === "1") return;
+  const t = boDau($("#nQh").value);
+  if (/(gai|dau|me|ba |chi |co |di |mo |thim|vo)/.test(t)) $("#nGioi").value = "nu";
+  else if (/(trai|re|cha|bo |anh |chu |cau |bac |ong|chong)/.test(t)) $("#nGioi").value = "nam";
+};
 $("#nutThuGiong").onclick = () => noi(thay("Dạ {G} ơi, {X} đang nghe {G} kể đây ạ."));
 $("#nutGhiAm").onclick = () => {
   S.ghiAm = !S.ghiAm; luu();
@@ -960,14 +1056,16 @@ $("#nutThem").onclick = async () => {
   if (!ten) { $("#nTen").focus(); return; }
   const qh = $("#nQh").value.trim();
   const xung = $("#nXung").value;
+  const gioi = $("#nGioi").value;
   const f = $("#nAnh").files[0];
   let anh = null;
   if (f) { try { anh = await thuNho(f, 480); } catch (e) { anh = null; } }
-  S.nguoi.push({ ten, qh, xung, anh });
+  S.nguoi.push({ ten, qh, xung, gioi, anh, giong: "" });
   S.chon = S.nguoi.length - 1;
   luu();
   $("#nTen").value = ""; $("#nQh").value = ""; $("#nAnh").value = "";
-  veDsNguoi(); veTrangChinh();
+  delete $("#nGioi").dataset.tay;
+  veDsNguoi(); veTrangChinh(); veDsGiong();
 };
 
 $("#nutChep").onclick = () => {

@@ -149,7 +149,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ba button{border:2px solid var(--line-strong); background:transparent; border-radius:12px;
   padding:12px 4px; font-weight:600; font-size:.95rem}
 .ba button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
-.ds-nguoi{display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; margin-top:12px}
+.ds-nguoi{display:grid; grid-template-columns:repeat(auto-fill,minmax(122px,1fr)); gap:10px; margin-top:12px}
 .the-nguoi{background:var(--surface-2); border:2px solid transparent; border-radius:14px; padding:8px; text-align:center}
 .the-nguoi.chon{border-color:var(--accent)}
 .the-nguoi img,.the-nguoi .mat{width:100%; aspect-ratio:1/1; border-radius:10px; object-fit:cover; display:block}
@@ -158,7 +158,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .the-nguoi .qh{font-size:.76rem; color:var(--muted)}
 .the-nguoi .nut{display:flex; gap:5px; margin-top:6px}
 .the-nguoi .nut button{flex:1; border:1px solid var(--line-strong); background:transparent;
-  border-radius:8px; font-size:.75rem; padding:5px 2px}
+  border-radius:8px; font-size:.72rem; padding:5px 1px; white-space:nowrap}
 .ds-buoi{list-style:none; padding:0; margin:10px 0 0; display:grid; gap:10px}
 .ds-buoi li{background:var(--surface-2); border-radius:14px; padding:12px 14px}
 .ds-buoi .khi{font-size:.78rem; color:var(--muted); font-variant-numeric:tabular-nums}
@@ -240,8 +240,12 @@ button{font:inherit; color:inherit; cursor:pointer}
         <div class="o-nhap"><label for="nQh">Quan hệ</label><input id="nQh" placeholder="Ví dụ: con gái"></div>
       </div>
       <div class="hang">
+        <div class="o-nhap"><label for="nGioi">Giới tính</label>
+          <select id="nGioi"><option value="nu">Nữ</option><option value="nam">Nam</option></select></div>
         <div class="o-nhap"><label for="nXung">Tự xưng là</label>
           <select id="nXung"><option value="cháu">cháu</option><option value="con">con</option></select></div>
+      </div>
+      <div class="hang">
         <div class="o-nhap"><label for="nAnh">Ảnh</label><input id="nAnh" type="file" accept="image/*"></div>
       </div>
       <div class="hang" style="margin-top:12px">
@@ -277,9 +281,12 @@ button{font:inherit; color:inherit; cursor:pointer}
 
     <div class="o">
       <h3>Giọng nói và ghi âm</h3>
+      <p class="y">Giọng được chọn riêng cho từng người, theo giới tính đã khai.</p>
       <div class="hang">
-        <div class="o-nhap"><label for="nGiong">Giọng đọc</label><select id="nGiong"></select></div>
+        <div class="o-nhap"><label for="nGiong">Giọng của <span id="tenGiong">người trò chuyện</span></label>
+          <select id="nGiong"></select></div>
       </div>
+      <p class="y" id="matGiong" style="margin-top:12px"></p>
       <div class="hang" style="margin-top:12px">
         <button class="nut-phu" id="nutThuGiong" style="margin-top:0">Nghe thử giọng</button>
       </div>
