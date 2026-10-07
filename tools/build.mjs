@@ -7,6 +7,7 @@
 import fs from "fs";
 import path from "path";
 import zlib from "zlib";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 
 const goc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -14,10 +15,19 @@ const src = path.join(goc, "src");
 const www = path.join(goc, "www");
 fs.mkdirSync(www, { recursive: true });
 
-/* ---------- 1. chép mã nguồn ---------- */
+/* ---------- 1. chép mã nguồn, đóng cùng một mã bản dựng ----------
+   Trang và mã nguồn phải nhận ra nhau. Máy người dùng giữ lẫn bản cũ bản
+   mới thì giao diện hỏng ngầm, nên mỗi bản dựng mang một mã riêng; lệch
+   mã thì ứng dụng tự dọn bộ đệm và tải lại. */
+const nguon = {};
+for (const f of ["index.html", "app.js", "sw.js"]) nguon[f] = fs.readFileSync(path.join(src, f), "utf8");
+const BAN = crypto.createHash("sha1")
+  .update(nguon["index.html"] + nguon["app.js"] + nguon["sw.js"])
+  .digest("hex").slice(0, 8);
 for (const f of ["index.html", "app.js", "sw.js"]) {
-  fs.copyFileSync(path.join(src, f), path.join(www, f));
+  fs.writeFileSync(path.join(www, f), nguon[f].split("__BAN_DUNG__").join(BAN), "utf8");
 }
+console.log("Ma ban dung: " + BAN);
 
 /* ---------- 2. biểu tượng: tự vẽ và tự mã hoá PNG, không thêm thư viện ---------- */
 const NEN   = [0x0F, 0x6B, 0x5C];   // xanh lục thẫm, màu nhấn của giao diện
@@ -112,6 +122,15 @@ ok("sw.js lay ban moi tu mang cho trang va ma nguon",
    /req\.mode === "navigate"/.test(sw) && /hayDoi\(url\)/.test(sw));
 ok("sw.js bo qua ca dem HTTP cua trinh duyet",
    /cache: "no-store"/.test(sw));
+
+/* trang va ma nguon phai mang cung mot ma ban dung, va phai co chot tu chua */
+const banHtml = (html.match(/name="ban-dung" content="([0-9a-f]{8})"/) || [])[1];
+const banJs = (js.match(/BAN_DUNG = "([0-9a-f]{8})"/) || [])[1];
+ok("trang va ma nguon cung ma ban dung (" + (banHtml || "?") + ")", !!banHtml && banHtml === banJs);
+ok("con sot cho danh dau __BAN_DUNG__ chua thay", !/__BAN_DUNG__/.test(html + js));
+ok("co chot tu chua khi lech ban", /__tuChua/.test(html) && /__tuChua/.test(js));
+ok("nhat ky tro chuyen duoc ve rieng, khong bi phan khac keo nga",
+   /rieng\("nhật ký trò chuyện", veDsBuoi\)/.test(js));
 
 try { new Function(js); ok("app.js khong loi cu phap", true); }
 catch (e) { ok("app.js LOI: " + e.message, false); }

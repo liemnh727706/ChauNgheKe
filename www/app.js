@@ -16,6 +16,32 @@
 "use strict";
 
 /* ===================================================================
+   0. Đối chiếu bản dựng
+   Trang và mã nguồn phải cùng một bản. Máy giữ lẫn bản cũ bản mới thì
+   giao diện hỏng ngầm — đã gặp: nhật ký trò chuyện không hiện ra mà
+   không báo lỗi gì, vì một hàm vẽ phía trên ném lỗi rồi chặn luôn phần sau.
+   =================================================================== */
+const BAN_DUNG = "22ce9667";
+window.__BAN_JS = BAN_DUNG;
+(function doiChieuBan() {
+  const m = document.querySelector('meta[name="ban-dung"]');
+  if (m && m.content === BAN_DUNG) return;
+  if (window.__tuChua) { window.__tuChua(); return; }
+  /* trang cũ không có sẵn hàm tự chữa thì mã nguồn tự lo lấy */
+  try {
+    if (sessionStorage.getItem("chaunghe.tuchua") === "1") return;
+    sessionStorage.setItem("chaunghe.tuchua", "1");
+  } catch (e) {}
+  const viec = [];
+  try { if (navigator.serviceWorker) viec.push(navigator.serviceWorker.getRegistrations()
+        .then(rs => Promise.all(rs.map(r => r.unregister())))); } catch (e) {}
+  try { if (window.caches) viec.push(caches.keys()
+        .then(ks => Promise.all(ks.map(k => caches.delete(k))))); } catch (e) {}
+  const taiLai = () => location.reload();
+  Promise.all(viec).then(taiLai, taiLai);
+})();
+
+/* ===================================================================
    1. Trạng thái và lưu trữ
    =================================================================== */
 
@@ -805,7 +831,8 @@ function veDsGiong() {
   const s = $("#nGiong");
   if (!s) return;
   const ng = nguoiDangChon();
-  $("#tenGiong").textContent = ng ? ng.ten : "người trò chuyện";
+  const nhan = $("#tenGiong");
+  if (nhan) nhan.textContent = ng ? ng.ten : "người trò chuyện";
 
   s.innerHTML = "";
   if (!giongCo.length) {
@@ -964,6 +991,8 @@ async function veTinMic() {
   d("Giọng tiếng Việt", giongCo.length ? giongCo.length + " giọng" : "chưa thấy — máy sẽ đọc bằng giọng mặc định");
   const q = await trangThaiQuyen();
   d("Quyền micro", { granted: "đã cho phép", denied: "đang bị chặn", prompt: "sẽ hỏi khi dùng" }[q] || "không rõ");
+  const oBan = $("#banDung");
+  if (oBan) oBan.textContent = BAN_DUNG;
   const tro = canTroMic();
   const k = $("#ketMic");
   if (tro) { k.textContent = tro; k.style.color = "var(--am)"; }
@@ -971,16 +1000,33 @@ async function veTinMic() {
   else { k.textContent = "Không thấy trở ngại nào."; k.style.color = "var(--muted)"; }
 }
 
+/* Mỗi phần vẽ chạy riêng: một phần hỏng thì không được kéo theo phần khác.
+   Nhật ký trò chuyện là thứ quý nhất ở màn này, không bao giờ được biến mất
+   chỉ vì danh sách giọng nói gặp trục trặc. */
+function rieng(ten, fn) {
+  try { fn(); }
+  catch (e) { console.error("Phần “" + ten + "” gặp lỗi:", e); }
+}
+
 function veGocNha() {
-  document.querySelectorAll("#baMuc button").forEach(b =>
-    b.setAttribute("aria-pressed", String(b.dataset.m === S.muc)));
-  $("#taMuc").textContent = TA_MUC[S.muc];
-  $("#nGoi").value = S.goi;
-  $("#nutGhiAm").textContent = "Tự ghi âm buổi nói chuyện: " + (S.ghiAm ? "Bật" : "Tắt");
-  $("#nutGhiAm").setAttribute("aria-pressed", String(S.ghiAm));
-  veDsGiong(); veDsNguoi(); veDsBuoi(); veTinMic();
-  try { $("#chep").value = JSON.stringify(Object.assign({}, S, { buoi: S.buoi.map(b => ({ d: b.d, giay: b.giay })) })); }
-  catch (e) { $("#chep").value = ""; }
+  rieng("mức độ", () => {
+    document.querySelectorAll("#baMuc button").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.m === S.muc)));
+    $("#taMuc").textContent = TA_MUC[S.muc];
+    $("#nGoi").value = S.goi;
+  });
+  rieng("ghi âm", () => {
+    $("#nutGhiAm").textContent = "Tự ghi âm buổi nói chuyện: " + (S.ghiAm ? "Bật" : "Tắt");
+    $("#nutGhiAm").setAttribute("aria-pressed", String(S.ghiAm));
+  });
+  rieng("danh sách người", veDsNguoi);
+  rieng("nhật ký trò chuyện", veDsBuoi);     // vẽ sớm, trước những thứ dễ hỏng hơn
+  rieng("giọng nói", veDsGiong);
+  rieng("kiểm tra micro", veTinMic);
+  rieng("sao lưu", () => {
+    $("#chep").value = JSON.stringify(Object.assign({}, S,
+      { buoi: S.buoi.map(b => ({ d: b.d, giay: b.giay })) }));
+  });
 }
 
 /* ảnh thu nhỏ trước khi lưu để không đầy bộ nhớ trình duyệt */

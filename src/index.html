@@ -11,6 +11,26 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Cháu Nghe Kể">
+<meta name="ban-dung" content="__BAN_DUNG__">
+<script>
+/* Trang và mã nguồn phải cùng một bản dựng. Máy giữ lẫn bản cũ bản mới thì
+   giao diện hỏng ngầm — ví dụ nhật ký trò chuyện không hiện ra mà không báo gì.
+   Lệch bản thì dọn sạch bộ đệm rồi tải lại đúng một lần. */
+window.__BAN_HTML = "__BAN_DUNG__";
+window.__tuChua = function () {
+  try {
+    if (sessionStorage.getItem("chaunghe.tuchua") === "1") return;
+    sessionStorage.setItem("chaunghe.tuchua", "1");
+  } catch (e) {}
+  var viec = [];
+  try { if (navigator.serviceWorker) viec.push(navigator.serviceWorker.getRegistrations()
+        .then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })); } catch (e) {}
+  try { if (window.caches) viec.push(caches.keys()
+        .then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })); } catch (e) {}
+  var taiLai = function () { location.reload(); };
+  Promise.all(viec).then(taiLai, taiLai);
+};
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -299,6 +319,7 @@ button{font:inherit; color:inherit; cursor:pointer}
       <h3>Kiểm tra micro</h3>
       <p class="y">Xem khi ứng dụng không nghe được.</p>
       <ul class="ds-buoi" id="tinMic"></ul>
+      <p class="y" style="margin-top:10px">Bản dựng: <b id="banDung">—</b></p>
       <p class="y" id="ketMic" style="margin-top:12px"></p>
     </div>
 
@@ -330,6 +351,10 @@ button{font:inherit; color:inherit; cursor:pointer}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <script src="app.js"></script>
+<script>
+/* Mã nguồn cũ không đặt __BAN_JS, nên undefined cũng là lệch bản */
+if (window.__BAN_JS !== window.__BAN_HTML) window.__tuChua();
+</script>
 <script>
 /* Giữ giao diện mở được khi mạng chập chờn. Phần nghe giọng nói vẫn cần
    internet — Chrome và Safari gửi âm thanh lên máy chủ hãng để nhận dạng. */
