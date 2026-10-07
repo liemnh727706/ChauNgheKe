@@ -321,5 +321,14 @@ button{font:inherit; color:inherit; cursor:pointer}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <script src="app.js"></script>
+<script>
+/* Giữ giao diện mở được khi mạng chập chờn. Phần nghe giọng nói vẫn cần
+   internet — Chrome và Safari gửi âm thanh lên máy chủ hãng để nhận dạng. */
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
 </body>
 </html>

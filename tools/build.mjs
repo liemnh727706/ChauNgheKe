@@ -102,6 +102,8 @@ ok("co the viewport", /width=device-width/.test(html));
 ok("chu co dau dung UTF-8", bytes.includes(Buffer.from("Cháu Nghe Kể", "utf8")));
 ok("co [hidden] display:none !important", /\[hidden\]\{display:none !important\}/.test(html));
 ok("co manifest va apple-touch-icon", /rel="manifest"/.test(html) && /rel="apple-touch-icon"/.test(html));
+/* có sw.js không đủ — phải có chỗ đăng ký, nếu không file đó nằm chơi */
+ok("co dang ky service worker", /serviceWorker\.register/.test(html));
 for (const f of ["manifest.webmanifest", "sw.js", "apple-touch-icon.png", "icon-192.png", "icon-512.png"])
   ok("co www/" + f, fs.existsSync(path.join(www, f)));
 
