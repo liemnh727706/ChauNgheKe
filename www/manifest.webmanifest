@@ -1,0 +1,18 @@
+{
+  "name": "Cháu Nghe Kể — người bạn trò chuyện",
+  "short_name": "Cháu Nghe Kể",
+  "description": "Lắng nghe và trò chuyện bằng giọng nói với người già kể chuyện ngày xưa.",
+  "lang": "vi",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF6EF",
+  "theme_color": "#FBF6EF",
+  "categories": ["health", "medical", "social"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

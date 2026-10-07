@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cháu Nghe Kể</title>
+<meta name="description" content="Người bạn trò chuyện bằng giọng nói, lắng nghe người già kể chuyện ngày xưa.">
+<meta name="theme-color" content="#FBF6EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14110E" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cháu Nghe Kể">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,800;1,400&family=Lora:ital,wght@0,500;1,500&display=swap">
+<style>
+:root{
+  --ground:#FBF6EF; --surface:#FFFFFF; --surface-2:#F2EADF;
+  --ink:#241C16; --ink-2:#574A3F; --muted:#8B7B6C;
+  --line:#E6D9C8; --line-strong:#C9B49A;
+  --accent:#0F6B5C; --accent-ink:#FFFFFF; --accent-soft:#D8EBE6;
+  --am:#C07415; --am-soft:#FBEDD6;
+  --tim:#7A3E8F;
+  --shadow:0 1px 0 rgba(36,28,22,.05), 0 14px 32px -22px rgba(36,28,22,.6);
+  --r:20px;
+  --body:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;
+  --serif:"Lora",Georgia,serif;
+  font-size:20px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#14110E; --surface:#201B16; --surface-2:#2A231D;
+    --ink:#F7F0E7; --ink-2:#D6C7B8; --muted:#A3907F;
+    --line:#3A3027; --line-strong:#58483B;
+    --accent:#4FC3AE; --accent-ink:#0B2520; --accent-soft:#17332D;
+    --am:#E8A445; --am-soft:#362715;
+    --tim:#C58FD8;
+    --shadow:0 1px 0 rgba(0,0,0,.4), 0 14px 32px -22px rgba(0,0,0,.95);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#14110E; --surface:#201B16; --surface-2:#2A231D;
+  --ink:#F7F0E7; --ink-2:#D6C7B8; --muted:#A3907F;
+  --line:#3A3027; --line-strong:#58483B;
+  --accent:#4FC3AE; --accent-ink:#0B2520; --accent-soft:#17332D;
+  --am:#E8A445; --am-soft:#362715;
+  --tim:#C58FD8;
+  --shadow:0 1px 0 rgba(0,0,0,.4), 0 14px 32px -22px rgba(0,0,0,.95);
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+img{max-width:100%}
+html,body{height:100%}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--body); font-size:1rem; line-height:1.5;
+  -webkit-text-size-adjust:100%;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+h1,h2,h3{margin:0; text-wrap:balance}
+button{font:inherit; color:inherit; cursor:pointer}
+:focus-visible{outline:3px solid var(--am); outline-offset:3px}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important; transition-duration:.001ms !important}}
+.wrap{max-width:560px; margin:0 auto; padding-inline:18px; padding-block:0 40px}
+
+/* ---------- trang chính ---------- */
+.dau{display:flex; align-items:center; gap:10px; padding:12px 18px; max-width:560px; margin:0 auto}
+.dau .ten{font-weight:800; font-size:1.05rem}
+.dau .cham{width:30px; height:30px; border-radius:10px; background:var(--accent);
+  color:var(--accent-ink); display:grid; place-items:center; font-size:.95rem}
+.day{flex:1}
+.nut-tron{border:1px solid var(--line-strong); background:var(--surface); border-radius:12px;
+  min-width:46px; height:46px; display:inline-grid; place-items:center; font-size:1.05rem}
+
+.anh-to{
+  width:100%; aspect-ratio:1/1; border-radius:28px; object-fit:cover; display:block;
+  border:4px solid var(--surface); box-shadow:var(--shadow); background:var(--surface-2);
+}
+.anh-thay{
+  width:100%; aspect-ratio:1/1; border-radius:28px; display:grid; place-items:center;
+  font-size:7rem; background:var(--surface-2); border:4px solid var(--surface); box-shadow:var(--shadow);
+}
+.gioi-thieu{text-align:center; margin-top:18px}
+.gioi-thieu .ho{font-size:1.9rem; font-weight:800; line-height:1.2}
+.gioi-thieu .quan-he{color:var(--ink-2); font-size:1.05rem; margin-top:4px}
+
+.nut-lon{
+  display:block; width:100%; margin-top:22px; border:none; border-radius:20px;
+  background:var(--accent); color:var(--accent-ink); font-size:1.5rem; font-weight:800;
+  padding:26px 18px; box-shadow:var(--shadow); text-align:center;
+}
+.nut-lon:active{transform:translateY(1px)}
+.nut-phu{
+  display:block; width:100%; margin-top:12px; border:2px solid var(--line-strong);
+  background:transparent; border-radius:16px; font-size:1.05rem; font-weight:600; padding:15px;
+}
+.loi-nho{margin-top:22px; border-left:4px solid var(--line-strong); padding-left:14px;
+  color:var(--ink-2); font-size:.92rem}
+
+/* ---------- màn trò chuyện ---------- */
+#man-noi{display:flex; flex-direction:column; min-height:100%}
+.khung-anh{position:relative; margin:0 auto; width:min(62vw,250px)}
+.khung-anh .anh-to,.khung-anh .anh-thay{border-radius:50%; aspect-ratio:1/1}
+.khung-anh.dang-noi .anh-to,.khung-anh.dang-noi .anh-thay{animation:tho 2.2s ease-in-out infinite}
+@keyframes tho{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.vong{position:absolute; inset:-14px; border-radius:50%; border:4px solid transparent}
+.vong.nghe{border-color:var(--am); animation:lan 1.8s ease-out infinite}
+@keyframes lan{0%{transform:scale(.96); opacity:.9}100%{transform:scale(1.14); opacity:0}}
+
+.trang-thai{text-align:center; margin-top:18px; font-size:1.15rem; font-weight:700; color:var(--am)}
+.trang-thai.noi{color:var(--accent)}
+.song{display:flex; align-items:flex-end; justify-content:center; gap:4px; height:46px; margin-top:12px}
+.song i{width:6px; border-radius:3px; background:var(--am); height:6px; transition:height .09s linear}
+
+.loi{
+  margin-top:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:18px 20px; box-shadow:var(--shadow); min-height:120px;
+}
+.loi .cua-cu{font-family:var(--serif); font-style:italic; font-size:1.25rem; line-height:1.55; color:var(--ink)}
+.loi .cua-cu:empty::before{content:"…"; color:var(--muted)}
+.loi .cua-app{margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
+  font-size:1.3rem; font-weight:600; color:var(--accent)}
+.nhan-nho{font-size:.75rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--muted); font-weight:700; margin-bottom:6px}
+
+.dieu-khien{display:flex; gap:10px; margin-top:auto; padding-top:22px}
+.dieu-khien button{flex:1; border-radius:16px; padding:18px 10px; font-size:1.05rem; font-weight:700;
+  border:2px solid var(--line-strong); background:var(--surface)}
+.dieu-khien .ket{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.bao-loi{margin-top:16px; background:var(--am-soft); border-radius:14px; padding:14px 16px;
+  font-size:.95rem; color:var(--ink); line-height:1.5}
+
+/* ---------- góc người nhà ---------- */
+.o{background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:16px 18px; margin-top:14px}
+.o h3{font-size:1.05rem}
+.o p.y{color:var(--muted); font-size:.85rem; margin:3px 0 12px}
+.hang{display:flex; gap:10px; flex-wrap:wrap}
+.hang + .hang{margin-top:10px}
+.o-nhap{display:flex; flex-direction:column; gap:5px; flex:1 1 140px}
+.o-nhap label{font-size:.8rem; color:var(--muted); font-weight:600}
+.o-nhap input,.o-nhap select{font:inherit; color:inherit; background:var(--surface-2);
+  border:1px solid var(--line-strong); border-radius:10px; padding:11px 12px; width:100%}
+.ba{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.ba button{border:2px solid var(--line-strong); background:transparent; border-radius:12px;
+  padding:12px 4px; font-weight:600; font-size:.95rem}
+.ba button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.ds-nguoi{display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; margin-top:12px}
+.the-nguoi{background:var(--surface-2); border:2px solid transparent; border-radius:14px; padding:8px; text-align:center}
+.the-nguoi.chon{border-color:var(--accent)}
+.the-nguoi img,.the-nguoi .mat{width:100%; aspect-ratio:1/1; border-radius:10px; object-fit:cover; display:block}
+.the-nguoi .mat{display:grid; place-items:center; font-size:2.2rem; background:var(--surface)}
+.the-nguoi .tn{font-weight:600; font-size:.88rem; margin-top:6px; overflow-wrap:anywhere}
+.the-nguoi .qh{font-size:.76rem; color:var(--muted)}
+.the-nguoi .nut{display:flex; gap:5px; margin-top:6px}
+.the-nguoi .nut button{flex:1; border:1px solid var(--line-strong); background:transparent;
+  border-radius:8px; font-size:.75rem; padding:5px 2px}
+.ds-buoi{list-style:none; padding:0; margin:10px 0 0; display:grid; gap:10px}
+.ds-buoi li{background:var(--surface-2); border-radius:14px; padding:12px 14px}
+.ds-buoi .khi{font-size:.78rem; color:var(--muted); font-variant-numeric:tabular-nums}
+.ds-buoi .tom{font-size:.92rem; margin-top:4px; color:var(--ink-2)}
+.ds-buoi audio{width:100%; margin-top:10px}
+.ds-buoi .viec{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap}
+.ds-buoi .viec button{border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:9px; padding:7px 12px; font-size:.82rem; font-weight:600}
+.loi-ban{font-size:.94rem; color:var(--ink-2)}
+.loi-ban ul{margin:8px 0 0; padding-left:20px; display:grid; gap:7px}
+.loi-ban b{color:var(--ink)}
+.bang-chep{width:100%; min-height:90px; border-radius:12px; border:1px solid var(--line-strong);
+  background:var(--surface-2); color:var(--ink-2); font-family:ui-monospace,Menlo,monospace;
+  font-size:.72rem; padding:10px; margin-top:10px}
+</style>
+</head>
+<body>
+
+<header class="dau">
+  <span class="cham">🏡</span><span class="ten">Cháu Nghe Kể</span>
+  <span class="day"></span>
+  <button class="nut-tron" id="nutNha" title="Góc người nhà">👨‍👩‍👧</button>
+</header>
+
+<main class="wrap">
+
+  <!-- ===== TRANG CHÍNH ===== -->
+  <section id="man-chinh">
+    <div id="oAnhChinh"></div>
+    <div class="gioi-thieu">
+      <div class="ho" id="hoChinh">Chưa chọn người trò chuyện</div>
+      <div class="quan-he" id="qhChinh">Vào Góc người nhà để thêm ảnh con cháu</div>
+    </div>
+    <button class="nut-lon" id="nutBatDau">Bấm để trò chuyện</button>
+    <button class="nut-phu" id="nutDoiNguoi">Đổi người trò chuyện</button>
+    <div class="loi-nho">
+      Ứng dụng nghe và trả lời hoàn toàn bằng giọng nói. Cụ cứ kể tự nhiên, không cần bấm gì thêm.
+      Mỗi buổi trò chuyện được ghi lại thành file âm thanh, nghe lại được ở Góc người nhà.
+    </div>
+  </section>
+
+  <!-- ===== TRÒ CHUYỆN ===== -->
+  <section id="man-noi" hidden>
+    <div class="khung-anh" id="khungAnh">
+      <div class="vong" id="vongNghe"></div>
+      <div id="oAnhNoi"></div>
+    </div>
+    <div class="trang-thai" id="trangThai">Đang chuẩn bị…</div>
+    <div class="song" id="song"></div>
+
+    <div class="loi">
+      <div class="nhan-nho" id="nhanCu">Cụ nói</div>
+      <div class="cua-cu" id="loiCu"></div>
+      <div class="cua-app" id="loiApp" hidden></div>
+    </div>
+
+    <div class="bao-loi" id="baoLoi" hidden></div>
+
+    <div class="dieu-khien">
+      <button id="nutTam">Tạm dừng</button>
+      <button id="nutKet" class="ket">Xong rồi</button>
+    </div>
+  </section>
+
+  <!-- ===== GÓC NGƯỜI NHÀ ===== -->
+  <section id="man-nha" hidden>
+    <button class="nut-phu" id="nutVe" style="margin-top:0">← Về trang chính</button>
+    <h2 style="margin-top:16px; font-size:1.5rem">Góc người nhà</h2>
+    <p style="color:var(--ink-2); margin-top:4px; font-size:.95rem">
+      Thêm ảnh con cháu, chỉnh cách xưng hô và nghe lại những câu chuyện đã kể.</p>
+
+    <div class="o">
+      <h3>Người trò chuyện</h3>
+      <p class="y">Ứng dụng sẽ hiện ảnh và nói chuyện thay người này. Nên dùng ảnh rõ mặt, chụp gần.</p>
+      <div class="hang">
+        <div class="o-nhap"><label for="nTen">Tên gọi</label><input id="nTen" placeholder="Ví dụ: Hương"></div>
+        <div class="o-nhap"><label for="nQh">Quan hệ</label><input id="nQh" placeholder="Ví dụ: con gái"></div>
+      </div>
+      <div class="hang">
+        <div class="o-nhap"><label for="nXung">Tự xưng là</label>
+          <select id="nXung"><option value="cháu">cháu</option><option value="con">con</option></select></div>
+        <div class="o-nhap"><label for="nAnh">Ảnh</label><input id="nAnh" type="file" accept="image/*"></div>
+      </div>
+      <div class="hang" style="margin-top:12px">
+        <button class="nut-phu" id="nutThem" style="margin-top:0">Thêm người</button>
+      </div>
+      <div class="ds-nguoi" id="dsNguoi"></div>
+    </div>
+
+    <div class="o">
+      <h3>Gọi cụ là gì</h3>
+      <p class="y">Dùng đúng cách gọi trong nhà thì cụ dễ tin đây là người thật đang nói chuyện.</p>
+      <div class="hang">
+        <div class="o-nhap"><label for="nGoi">Xưng hô</label>
+          <select id="nGoi">
+            <option value="bà">bà</option><option value="ông">ông</option>
+            <option value="má">má</option><option value="ba">ba</option>
+            <option value="mẹ">mẹ</option><option value="bố">bố</option>
+            <option value="bác">bác</option><option value="cụ">cụ</option>
+          </select></div>
+      </div>
+    </div>
+
+    <div class="o">
+      <h3>Mức độ sa sút trí nhớ</h3>
+      <p class="y">Càng nặng thì ứng dụng nói càng chậm, câu càng ngắn và càng ít hỏi — chỉ lắng nghe và trấn an.</p>
+      <div class="ba" id="baMuc">
+        <button data-m="nhe" aria-pressed="false">Nhẹ</button>
+        <button data-m="vua" aria-pressed="true">Vừa</button>
+        <button data-m="nang" aria-pressed="false">Nặng</button>
+      </div>
+      <p class="y" id="taMuc" style="margin-top:12px"></p>
+    </div>
+
+    <div class="o">
+      <h3>Giọng nói và ghi âm</h3>
+      <div class="hang">
+        <div class="o-nhap"><label for="nGiong">Giọng đọc</label><select id="nGiong"></select></div>
+      </div>
+      <div class="hang" style="margin-top:12px">
+        <button class="nut-phu" id="nutThuGiong" style="margin-top:0">Nghe thử giọng</button>
+      </div>
+      <div class="hang" style="margin-top:12px">
+        <button class="nut-phu" id="nutGhiAm" style="margin-top:0" aria-pressed="true">Tự ghi âm buổi nói chuyện: Bật</button>
+      </div>
+    </div>
+
+    <div class="o">
+      <h3>Kiểm tra micro</h3>
+      <p class="y">Xem khi ứng dụng không nghe được.</p>
+      <ul class="ds-buoi" id="tinMic"></ul>
+      <p class="y" id="ketMic" style="margin-top:12px"></p>
+    </div>
+
+    <div class="o">
+      <h3>Những câu chuyện đã kể</h3>
+      <p class="y">Mỗi buổi là một file âm thanh kèm lời ghi lại. Chỉ nằm trong máy này.</p>
+      <ul class="ds-buoi" id="dsBuoi"></ul>
+    </div>
+
+    <div class="o loi-ban">
+      <h3>Vài điều nên nhớ</h3>
+      <ul>
+        <li><b>Đừng sửa lưng cụ.</b> Nếu cụ nhớ sai tên, sai năm, cứ để vậy. Ứng dụng cố ý không bao giờ cải chính — tranh luận chỉ làm cụ lo lắng và thu mình lại.</li>
+        <li><b>Mục đích là được nói, không phải nói đúng.</b> Người sa sút trí nhớ vẫn giữ cảm xúc rất lâu sau khi quên mất sự việc. Buổi nói chuyện vui là đã có ích, dù cụ quên ngay sau đó.</li>
+        <li><b>Nên ngồi cùng những lần đầu</b> để cụ quen, và để biết ứng dụng nghe có chuẩn không.</li>
+        <li><b>Về ảnh người thân:</b> nên hỏi ý người trong ảnh trước. Nhiều gia đình chấp nhận cách này trong chăm sóc sa sút trí nhớ, nhưng đó vẫn nên là quyết định của cả nhà.</li>
+        <li><b>Ứng dụng không thay được người thật.</b> Nó lấp quãng trống giữa những lần con cháu về thăm, không phải để thay thế.</li>
+      </ul>
+    </div>
+
+    <div class="o">
+      <h3>Sao lưu cài đặt</h3>
+      <p class="y">Chép đoạn chữ này giữ lại để không mất khi đổi máy. File âm thanh không nằm trong đây — hãy lưu riêng từng buổi.</p>
+      <textarea class="bang-chep" id="chep" readonly></textarea>
+      <button class="nut-phu" id="nutChep">Chép</button>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

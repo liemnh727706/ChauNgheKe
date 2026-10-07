@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "chau-nghe-ke",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8821", "--directory", "www"],
+      "port": 8821
+    }
+  ]
+}
