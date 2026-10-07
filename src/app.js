@@ -586,7 +586,8 @@ const P = {
   chay: false, tam: false, dangNoi: false,
   may: null, luong: null, ghi: null, manh: [],
   batDau: 0, loi: [], chuDe: {}, demIm: null, phanTich: null, veSong: null,
-  id: "", amId: "", demManh: 0, coAm: false, ext: "webm", kieuAm: "", loiLienTiep: 0
+  id: "", amId: "", demManh: 0, coAm: false, ext: "webm", kieuAm: "", loiLienTiep: 0,
+  cheDo: "hoiDap", may2: null, lucCoTieng: 0, canhDung: null, caChuyen: [], tamTuDong: false
 };
 
 /* Lưu dần sau mỗi lượt, không đợi tới lúc bấm "Xong rồi".
@@ -610,6 +611,9 @@ function luuBuoi(daXong) {
     luc: new Date(P.batDau).toISOString(),
     giay,
     chuDe: Object.keys(P.chuDe),
+    /* chế độ kể chuyện: ghi lại chính những cái tên cụ nhắc tới, để sau này
+       con cháu nhìn nhật ký là biết hôm đó cụ kể về ai, về đâu */
+    moc: P.may2 ? [].concat(...Object.values(P.may2.tomTat())).slice(0, 6) : undefined,
     loi: P.loi.slice(0, 400),
     dangDo: !daXong,
     chuaNhanRaLoi: !coKeLai
@@ -676,6 +680,7 @@ function veSongAm() {
 function datDemIm() {
   clearTimeout(P.demIm);
   const cho = S.muc === "nang" ? 20000 : S.muc === "vua" ? 16000 : 13000;
+  if (P.cheDo === "keChuyen") return;   // chế độ kể chuyện có bộ canh riêng
   P.demIm = setTimeout(() => {
     if (!P.chay || P.tam || P.dangNoi) return;
     const c = thay(chonKhongLap(MOI_CHUYEN));
@@ -699,7 +704,14 @@ function phatLoi(text, ketThuc) {
   noi(text, () => {
     P.dangNoi = false;
     if (ketThuc) { ketThucBuoi(); return; }
-    if (P.chay && !P.tam) { batMayNghe(); datTrangThai("Đang nghe " + GOI() + " kể…", "nghe"); datDemIm(); }
+    if (P.chay && !P.tam) {
+      batMayNghe();
+      datTrangThai(P.cheDo === "keChuyen"
+        ? GOI() + " cứ kể, " + (TEN() || "cháu") + " đang nghe…"
+        : "Đang nghe " + GOI() + " kể…", "nghe");
+      if (P.cheDo === "keChuyen") P.lucCoTieng = Date.now();
+      datDemIm();
+    }
   });
 }
 
@@ -737,13 +749,24 @@ function batMayNghe() {
       const r = ev.results[i];
       if (r.isFinal) xong += r[0].transcript; else tam += r[0].transcript;
     }
-    if (tam) { hienLoiCu(tam); datDemIm(); }
+    if (tam) { hienLoiCu(tam); P.lucCoTieng = Date.now(); datDemIm(); }
     if (xong.trim()) {
       const loi = xong.trim();
       ghiKT("nghe ra: " + loi.slice(0, 50));
       P.loiLienTiep = 0;
+      P.lucCoTieng = Date.now();
       hienLoiCu(loi);
       ghiLoi("cu", loi);
+
+      /* Chế độ kể chuyện: chỉ gom lại, tuyệt đối không đáp ngay — đáp ngay là
+         cắt ngang lời cụ. Việc lên tiếng để bộ canh im lặng lo. */
+      if (P.cheDo === "keChuyen") {
+        P.caChuyen.push(loi);
+        if (P.may2) P.may2.nghe(loi);
+        veCaChuyen();
+        return;
+      }
+
       const d = soanDap(loi);
       if (d.chuDe) P.chuDe[d.chuDe] = (P.chuDe[d.chuDe] || 0) + 1;
       ghiLoi("app", d.text);
@@ -779,7 +802,7 @@ function batMayNghe() {
   try { m.start(); } catch (e) { ghiKT("không khởi động được máy nghe: " + e.message); }
 }
 
-async function batDauBuoi() {
+async function batDauBuoi(cheDo) {
   const tro = canTroMic();
   if (tro) { chuyenMan("noi"); baoLoi(tro); datTrangThai("Chưa nghe được", ""); return; }
 
@@ -789,6 +812,11 @@ async function batDauBuoi() {
   P.chay = true; P.tam = false; P.dangNoi = false;
   P.loi = []; P.chuDe = {}; P.manh = []; P.batDau = Date.now();
   P.id = "b" + P.batDau; P.amId = "am" + P.batDau;
+  P.cheDo = cheDo === "keChuyen" ? "keChuyen" : "hoiDap";
+  P.caChuyen = []; P.lucCoTieng = Date.now();
+  P.may2 = P.cheDo === "keChuyen" ? new MayKeChuyen({ muc: S.muc, thay, chuanHoa }) : null;
+  $("#nhanCheDo").hidden = P.cheDo !== "keChuyen";
+  veCaChuyen();
   P.demManh = 0; P.coAm = false; P.ext = "webm"; P.kieuAm = "";
   soLuot = 0; vuaHoi = false; daDung.length = 0;
   hienLoiCu(""); hienLoiApp("");
@@ -830,15 +858,17 @@ async function batDauBuoi() {
     } catch (e) { P.ghi = null; ghiKT("KHÔNG ghi âm được: " + e.message); }
   }
 
-  const chao = thay(chonKhongLap(CHAO_DAU));
+  const chao = P.cheDo === "keChuyen" ? P.may2.moDau() : thay(chonKhongLap(CHAO_DAU));
   ghiLoi("app", chao);
   hienLoiApp(chao);
+  if (P.cheDo === "keChuyen") batCanhDung();
   phatLoi(chao);
 }
 
 function dungHan() {
   P.chay = false;
   clearTimeout(P.demIm);
+  dungCanhDung();
   if (P.veSong) cancelAnimationFrame(P.veSong);
   try { if (P.may) { P.may.onend = null; P.may.abort(); } } catch (e) {}
   try { window.speechSynthesis.cancel(); } catch (e) {}
@@ -876,6 +906,68 @@ function khoeDaLuu(giay) {
   clearTimeout(khoeDaLuu.h);
   khoeDaLuu.h = setTimeout(() => { o.hidden = true; }, 9000);
 }
+
+
+/* ===================================================================
+   7b. Chế độ kể chuyện liền mạch
+   Cụ kể một mạch, app im lặng nghe. Chỉ lên tiếng khi cụ dừng đủ lâu,
+   và lên tiếng bằng chính chuyện cụ vừa kể.
+   =================================================================== */
+
+function veCaChuyen() {
+  const o = $("#caChuyen");
+  if (!o) return;
+  o.hidden = P.cheDo !== "keChuyen" || !P.caChuyen.length;
+  if (o.hidden) return;
+  o.innerHTML = "";
+  const du = P.caChuyen.length - 12;
+  if (du > 0) {
+    const n = el("div", null, "… (" + du + " đoạn trước)");
+    n.style.cssText = "color:var(--muted); font-size:.85rem";
+    o.appendChild(n);
+  }
+  const ds = P.caChuyen.slice(-12);
+  ds.forEach((c, i) => {
+    const d = el("div");
+    d.style.marginTop = "6px";
+    if (i === ds.length - 1) d.appendChild(el("b", null, c));
+    else d.textContent = c;
+    o.appendChild(d);
+  });
+  o.scrollTop = o.scrollHeight;
+}
+
+function batCanhDung() {
+  dungCanhDung();
+  P.lucCoTieng = Date.now();
+  P.canhDung = setInterval(() => {
+    if (!P.chay || P.tam || P.dangNoi || P.cheDo !== "keChuyen" || !P.may2) return;
+    const im = Date.now() - P.lucCoTieng;
+
+    if (P.caChuyen.length && im >= P.may2.nguongDung()) {
+      const d = P.may2.dapKhiDung();
+      if (d) {
+        ghiKT("cụ dừng " + Math.round(im / 1000) + "s → " + d.loai + (d.moc ? " (" + d.moc + ")" : ""));
+        ghiLoi("app", d.text);
+        hienLoiApp(d.text);
+        P.lucCoTieng = Date.now();
+        phatLoi(d.text);
+      }
+      return;
+    }
+    /* im quá lâu mà chưa kể gì: nhắc nhẹ, không hối */
+    if (!P.caChuyen.length && im >= P.may2.nguongLang()) {
+      const c = P.may2.langLau();
+      ghiKT("im lâu → gợi tiếp");
+      ghiLoi("app", c);
+      hienLoiApp(c);
+      P.lucCoTieng = Date.now();
+      phatLoi(c);
+    }
+  }, 400);
+}
+
+function dungCanhDung() { if (P.canhDung) { clearInterval(P.canhDung); P.canhDung = null; } }
 
 /* ===================================================================
    8. Giao diện
@@ -1008,9 +1100,11 @@ function veDsBuoi() {
       String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") +
       " · nói " + dongHo(b.giay)));
     const cu = b.loi.filter(l => l.ai === "cu");
+    const nhan = b.chuDe && b.chuDe.length ? b.chuDe.map(tenChuDe).join(", ")
+              : (b.moc && b.moc.length ? b.moc.join(", ") : "");
     li.appendChild(el("div", "tom", b.chuaNhanRaLoi
       ? "Máy không nghe ra chữ, nhưng vẫn giữ được tiếng nói — bấm nghe lại bên dưới."
-      : cu.length + " lượt kể" + (b.chuDe && b.chuDe.length ? " · " + b.chuDe.map(tenChuDe).join(", ") : "")));
+      : cu.length + " lượt kể" + (nhan ? " · " + nhan : "")));
 
     if (b.am) {
       const ng = document.createElement("audio");
@@ -1148,11 +1242,13 @@ function thuNho(file, canh) {
 
 $("#nutNha").onclick = () => { veGocNha(); chuyenMan("nha"); };
 $("#nutVe").onclick = () => { veTrangChinh(); chuyenMan("chinh"); };
-$("#nutBatDau").onclick = () => batDauBuoi();
+$("#nutBatDau").onclick = () => batDauBuoi("hoiDap");
+$("#nutKeChuyen").onclick = () => batDauBuoi("keChuyen");
 $("#nutDoiNguoi").onclick = () => { veGocNha(); chuyenMan("nha"); };
 
 $("#nutTam").onclick = () => {
   P.tam = !P.tam;
+  if (!P.tam) P.tamTuDong = false;
   $("#nutTam").textContent = P.tam ? "Nói tiếp" : "Tạm dừng";
   if (P.tam) {
     clearTimeout(P.demIm);
@@ -1239,10 +1335,19 @@ function chotLai() {
 window.addEventListener("pagehide", chotLai);
 window.addEventListener("beforeunload", chotLai);
 
+/* Màn hình tắt hay chuyển sang app khác thì tạm dừng cho đỡ tốn pin — nhưng
+   phải tự nghe lại khi quay về. Người già đặt máy xuống một lúc rồi cầm lên
+   kể tiếp, không ai nhớ đi tìm nút "Nói tiếp". */
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     chotLai();
-    if (P.chay && !P.tam) $("#nutTam").click();
+    if (P.chay && !P.tam) { P.tamTuDong = true; $("#nutTam").click(); }
+    return;
+  }
+  if (P.chay && P.tam && P.tamTuDong) {
+    P.tamTuDong = false;
+    ghiKT("quay lại màn hình → nghe tiếp");
+    $("#nutTam").click();
   }
 });
 

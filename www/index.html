@@ -11,12 +11,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Cháu Nghe Kể">
-<meta name="ban-dung" content="f0f4ad1c">
+<meta name="ban-dung" content="abf3c0a8">
 <script>
 /* Trang và mã nguồn phải cùng một bản dựng. Máy giữ lẫn bản cũ bản mới thì
    giao diện hỏng ngầm — ví dụ nhật ký trò chuyện không hiện ra mà không báo gì.
    Lệch bản thì dọn sạch bộ đệm rồi tải lại đúng một lần. */
-window.__BAN_HTML = "f0f4ad1c";
+window.__BAN_HTML = "abf3c0a8";
 window.__tuChua = function () {
   try {
     if (sessionStorage.getItem("chaunghe.tuchua") === "1") return;
@@ -147,6 +147,12 @@ button{font:inherit; color:inherit; cursor:pointer}
 .nhan-nho{font-size:.75rem; letter-spacing:.12em; text-transform:uppercase;
   color:var(--muted); font-weight:700; margin-bottom:6px}
 
+.nhan-che-do{text-align:center; margin-top:14px; font-size:.8rem; letter-spacing:.1em;
+  text-transform:uppercase; font-weight:700; color:var(--am)}
+.ca-chuyen{margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
+  font-family:var(--serif); font-size:1rem; line-height:1.6; color:var(--ink-2);
+  max-height:30vh; overflow-y:auto}
+.ca-chuyen b{color:var(--ink); font-style:normal}
 .dieu-khien{display:flex; gap:10px; margin-top:auto; padding-top:22px}
 .dieu-khien button{flex:1; border-radius:16px; padding:18px 10px; font-size:1.05rem; font-weight:700;
   border:2px solid var(--line-strong); background:var(--surface)}
@@ -215,6 +221,8 @@ button{font:inherit; color:inherit; cursor:pointer}
     <div id="daLuu" hidden style="margin-top:18px; background:var(--accent-soft); border-radius:14px;
          padding:14px 16px; font-weight:600; color:var(--ink)"></div>
     <button class="nut-lon" id="nutBatDau">Bấm để trò chuyện</button>
+    <button class="nut-lon" id="nutKeChuyen" style="background:var(--am); margin-top:12px">Kể chuyện liền mạch</button>
+    <p class="y" style="text-align:center; margin-top:10px; color:var(--muted)">Kể liền mạch: cụ cứ kể, ứng dụng im lặng nghe và chỉ hỏi khi cụ dừng lại.</p>
     <button class="nut-phu" id="nutDoiNguoi">Đổi người trò chuyện</button>
     <div class="loi-nho">
       Ứng dụng nghe và trả lời hoàn toàn bằng giọng nói. Cụ cứ kể tự nhiên, không cần bấm gì thêm.
@@ -228,6 +236,7 @@ button{font:inherit; color:inherit; cursor:pointer}
       <div class="vong" id="vongNghe"></div>
       <div id="oAnhNoi"></div>
     </div>
+    <div class="nhan-che-do" id="nhanCheDo" hidden>Đang kể chuyện liền mạch</div>
     <div class="trang-thai" id="trangThai">Đang chuẩn bị…</div>
     <div class="song" id="song"></div>
 
@@ -235,6 +244,7 @@ button{font:inherit; color:inherit; cursor:pointer}
       <div class="nhan-nho" id="nhanCu">Cụ nói</div>
       <div class="cua-cu" id="loiCu"></div>
       <div class="cua-app" id="loiApp" hidden></div>
+      <div class="ca-chuyen" id="caChuyen" hidden></div>
     </div>
 
     <div class="bao-loi" id="baoLoi" hidden></div>
@@ -345,6 +355,7 @@ button{font:inherit; color:inherit; cursor:pointer}
       <ul>
         <li><b>Đừng sửa lưng cụ.</b> Nếu cụ nhớ sai tên, sai năm, cứ để vậy. Ứng dụng cố ý không bao giờ cải chính — tranh luận chỉ làm cụ lo lắng và thu mình lại.</li>
         <li><b>Mục đích là được nói, không phải nói đúng.</b> Người sa sút trí nhớ vẫn giữ cảm xúc rất lâu sau khi quên mất sự việc. Buổi nói chuyện vui là đã có ích, dù cụ quên ngay sau đó.</li>
+        <li><b>Hai chế độ:</b> “Trò chuyện qua lại” hợp khi cụ nói ngắt quãng hay sa sút nặng; “Kể chuyện liền mạch” hợp khi cụ còn kể được dài — ứng dụng im lặng nghe và chỉ hỏi khi cụ dừng.</li>
         <li><b>Nên ngồi cùng những lần đầu</b> để cụ quen, và để biết ứng dụng nghe có chuẩn không.</li>
         <li><b>Về ảnh người thân:</b> nên hỏi ý người trong ảnh trước. Nhiều gia đình chấp nhận cách này trong chăm sóc sa sút trí nhớ, nhưng đó vẫn nên là quyết định của cả nhà.</li>
         <li><b>Ứng dụng không thay được người thật.</b> Nó lấp quãng trống giữa những lần con cháu về thăm, không phải để thay thế.</li>
@@ -361,6 +372,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<script src="ngucanh.js"></script>
+<script src="kechuyen.js"></script>
 <script src="app.js"></script>
 <script>
 /* Mã nguồn cũ không đặt __BAN_JS, nên undefined cũng là lệch bản */

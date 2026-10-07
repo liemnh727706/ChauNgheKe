@@ -20,7 +20,33 @@ thì đây là một cuộc nói chuyện với người thân, không phải v�
 Máy hồi đáp làm đúng việc mà liệu pháp hồi tưởng cần: nghe, đệm, nhắc lại, an ủi.
 Nó không cần biết gì về gia đình để làm tốt việc đó.
 
-## Cách nó đáp lời
+## Hai chế độ
+
+**Trò chuyện qua lại** — cụ nói một câu, app đáp một câu. Hợp khi cụ mệt,
+nói ngắt quãng, hoặc sa sút nặng cần được trấn an liên tục.
+
+**Kể chuyện liền mạch** — cụ kể một mạch, app **im lặng nghe**, chỉ lên tiếng
+khi cụ dừng hẳn vài giây. Hợp khi cụ còn kể được dài.
+
+Chế độ kể chuyện làm ba việc:
+
+1. **Không cắt ngang.** Dừng dưới ngưỡng (2,6s mức nhẹ · 3,2s vừa · 4s nặng)
+   thì tuyệt đối im. Nghỉ lấy hơi giữa câu không bị tính là kể xong.
+2. **Hỏi theo đúng chuyện vừa kể**, không phải câu soạn sẵn. Cụ nhắc "bà Tư"
+   thì hỏi *"Bà Tư là người thế nào hả má?"*; nhắc "chợ Tầm Vu" thì hỏi
+   *"Chợ Tầm Vu có đông người không má?"*. Câu hỏi chứa chính lời cụ nói —
+   đó mới là dấu hiệu có người đang thật sự nghe.
+3. **Hỏi — nối — hỏi — nối.** Không bao giờ hỏi hai lượt liền; hỏi dồn thành
+   hỏi cung. Hết chuyện đáng hỏi thì tự lui về tiếng đệm nối chuyện.
+
+Bộ hiểu ngữ cảnh nhặt ra người, nơi chốn, mốc thời gian, sự việc và đồ vật
+từ lời kể, rồi chọn thứ cụ **vừa nhắc mà chưa kể rõ** để hỏi tiếp. Những gì
+nhặt được cũng vào nhật ký, nên sau này nhìn là biết hôm đó cụ kể về ai.
+
+Chạy hoàn toàn trong máy. Không gửi chuyện nhà người ta đi đâu, đáp tức thì,
+và không bao giờ bịa ra chi tiết gia đình.
+
+## Cách nó đáp lời (chế độ trò chuyện qua lại)
 
 | Tình huống | Cách đáp |
 |---|---|

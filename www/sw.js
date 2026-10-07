@@ -7,8 +7,8 @@
  * dùng bản đã lưu. Nếu làm ngược lại thì mỗi bản sửa lỗi về sau sẽ không bao
  * giờ tới được máy người dùng — họ cứ chạy mãi bản cũ mà không biết.
  */
-const BAN = "chaunghe-v3";
-const GIU = ["./", "./index.html", "./app.js", "./manifest.webmanifest",
+const BAN = "chaunghe-v4";
+const GIU = ["./", "./index.html", "./app.js", "./ngucanh.js", "./kechuyen.js", "./manifest.webmanifest",
              "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
