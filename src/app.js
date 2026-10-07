@@ -77,6 +77,27 @@ function ngayKhoa(d) {
 }
 function dongHo(g) { return Math.floor(g / 60) + ":" + String(Math.round(g % 60)).padStart(2, "0"); }
 
+/* Nhật ký kỹ thuật: ghi lại thật sự chuyện gì xảy ra trên máy người dùng.
+   Mọi thứ chạy trong máy họ, mình không nhìn thấy gì — không có cái này thì
+   mỗi lần hỏng lại phải đoán, mà đoán thì sai. Lưu luôn ra localStorage để
+   còn đọc được sau khi đóng app. */
+const KY_THUAT = [];
+function ghiKT(viec) {
+  const t = new Date();
+  const gio = String(t.getHours()).padStart(2, "0") + ":" +
+              String(t.getMinutes()).padStart(2, "0") + ":" +
+              String(t.getSeconds()).padStart(2, "0");
+  KY_THUAT.push(gio + "  " + viec);
+  if (KY_THUAT.length > 250) KY_THUAT.shift();
+  try { localStorage.setItem("chaunghe.kythuat", JSON.stringify(KY_THUAT)); } catch (e) {}
+}
+try {
+  const cu = JSON.parse(localStorage.getItem("chaunghe.kythuat") || "[]");
+  if (Array.isArray(cu)) KY_THUAT.push(...cu.slice(-150));
+} catch (e) {}
+window.addEventListener("error", e => ghiKT("LỖI: " + e.message + " @" + (e.lineno || "?")));
+window.addEventListener("unhandledrejection", e => ghiKT("LỖI (hứa): " + String(e.reason).slice(0, 120)));
+
 function nguoiDangChon() { return S.nguoi[S.chon] || null; }
 function XUNG() { const n = nguoiDangChon(); return (n && n.xung) || "cháu"; }
 function GOI() { return S.goi || "bà"; }
@@ -408,7 +429,17 @@ try { window.speechSynthesis.onvoiceschanged = () => { nhatGiong(); veDsGiong();
 
 function noi(text, xong) {
   const sp = window.speechSynthesis;
-  if (!sp) { if (xong) xong(); return; }
+  let daChot = false;
+  /* Chốt một lần duy nhất: Chrome có tật không bắn onend, hoặc bắn hai lần.
+     Không canh đồng hồ thì app treo ở trạng thái "đang nói" và vĩnh viễn
+     không quay lại nghe — cụ ngồi kể mà không ai thu. */
+  const chot = vi => {
+    if (daChot) return;
+    daChot = true;
+    ghiKT("đọc xong (" + vi + ")");
+    if (xong) xong();
+  };
+  if (!sp) { ghiKT("máy không có bộ đọc"); chot("không có bộ đọc"); return; }
   try {
     sp.cancel();
     const u = new SpeechSynthesisUtterance(text);
@@ -418,10 +449,15 @@ function noi(text, xong) {
     u.pitch = caoDoChoNguoi(ng);
     const g = giongChoNguoi(ng);
     if (g) u.voice = g;
-    u.onend = () => { if (xong) xong(); };
-    u.onerror = () => { if (xong) xong(); };
+    u.onend = () => chot("bình thường");
+    u.onerror = e => { ghiKT("bộ đọc lỗi: " + ((e && e.error) || "?")); chot("lỗi"); };
+    ghiKT("đọc: " + text.slice(0, 40));
     sp.speak(u);
-  } catch (e) { if (xong) xong(); }
+    setTimeout(() => chot("quá giờ"), Math.max(3500, text.length * 110 + 2000));
+  } catch (e) {
+    ghiKT("bộ đọc ném lỗi: " + e.message);
+    chot("ném lỗi");
+  }
 }
 
 /* ===================================================================
@@ -550,7 +586,7 @@ const P = {
   chay: false, tam: false, dangNoi: false,
   may: null, luong: null, ghi: null, manh: [],
   batDau: 0, loi: [], chuDe: {}, demIm: null, phanTich: null, veSong: null,
-  id: "", amId: "", demManh: 0, coAm: false, ext: "webm", kieuAm: ""
+  id: "", amId: "", demManh: 0, coAm: false, ext: "webm", kieuAm: "", loiLienTiep: 0
 };
 
 /* Lưu dần sau mỗi lượt, không đợi tới lúc bấm "Xong rồi".
@@ -559,21 +595,32 @@ const P = {
    chạy được cả trong lúc trang đang đóng. */
 function luuBuoi(daXong) {
   if (!P.id) return;
-  if (!P.loi.some(l => l.ai === "cu")) return;   // cụ chưa nói gì thì chưa có gì để lưu
+  const giay = Math.round((Date.now() - P.batDau) / 1000);
+  const coKeLai = P.loi.some(l => l.ai === "cu");
+
+  /* Giữ buổi nói chuyện cả khi máy không nghe ra chữ nào.
+     Tiếng nói của cụ mới là thứ quý; lời ghi lại chỉ là phụ. Trước đây
+     buổi nào máy không nhận ra chữ là vứt sạch cả bản ghi âm — đúng cảnh
+     hay gặp trên điện thoại, nơi bộ nhận dạng tranh micro với máy ghi âm. */
+  if (!coKeLai && !(P.coAm && giay >= 10)) { ghiKT("chưa lưu (chưa có lời kể, chưa có tiếng nói)"); return; }
+
   const ban = {
     id: P.id,
     d: ngayKhoa(new Date(P.batDau)),
     luc: new Date(P.batDau).toISOString(),
-    giay: Math.round((Date.now() - P.batDau) / 1000),
+    giay,
     chuDe: Object.keys(P.chuDe),
     loi: P.loi.slice(0, 400),
-    dangDo: !daXong
+    dangDo: !daXong,
+    chuaNhanRaLoi: !coKeLai
   };
   if (P.coAm) { ban.am = P.amId; ban.ext = P.ext; }
   const i = S.buoi.findIndex(b => b.id === P.id);
   if (i >= 0) S.buoi[i] = ban; else S.buoi.unshift(ban);
   S.buoi = S.buoi.slice(0, 60);
   luu();
+  ghiKT("đã lưu buổi: " + ban.loi.length + " dòng, " + ban.giay + " giây" +
+        (ban.am ? ", có tiếng nói" : ", chưa có tiếng nói") + (ban.chuaNhanRaLoi ? ", không nhận ra chữ" : ""));
 }
 
 /* Đổ tiếng nói đã thu được vào kho, định kỳ chứ không đợi tới cuối buổi */
@@ -583,6 +630,7 @@ async function xaTiengNoi() {
     const blob = new Blob(P.manh, { type: P.kieuAm || "audio/webm" });
     await amLuu(P.amId, blob);
     P.coAm = true; P.ext = duoiTu(blob.type);
+    ghiKT("đã cất tiếng nói: " + Math.round(blob.size / 1024) + " KB");
     luuBuoi(!P.chay);
   } catch (e) {}
 }
@@ -655,6 +703,22 @@ function phatLoi(text, ketThuc) {
   });
 }
 
+const demLoiNghe = {};
+
+/* Máy không nghe ra chữ thì cũng đừng để người nhà tưởng mất trắng:
+   tiếng nói vẫn đang được thu, và đó mới là thứ cần giữ. */
+function canhBaoNghe(ma) {
+  if (demLoiNghe[ma] !== 1) return;          // chỉ báo một lần cho mỗi loại
+  const dang = P.ghi && P.ghi.state === "recording";
+  baoLoi(
+    (ma === "network"
+      ? "Máy đang không nối được mạng nên không nghe ra chữ. "
+      : "Máy không lấy được tiếng từ micro để nhận ra chữ. ") +
+    (dang ? "Nhưng vẫn đang ghi âm bình thường — câu chuyện của cụ vẫn được giữ lại đầy đủ."
+          : "Và cũng chưa ghi âm được.")
+  );
+}
+
 function batMayNghe() {
   if (!MayNghe || !P.chay || P.tam || P.dangNoi) return;
   try { if (P.may) { P.may.onend = null; P.may.abort(); } } catch (e) {}
@@ -665,6 +729,8 @@ function batMayNghe() {
   m.interimResults = true;
   m.maxAlternatives = 1;
 
+  m.onstart = () => ghiKT("máy nghe đã chạy");
+  m.onspeechstart = () => ghiKT("nghe thấy có tiếng");
   m.onresult = ev => {
     let tam = "", xong = "";
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
@@ -674,6 +740,8 @@ function batMayNghe() {
     if (tam) { hienLoiCu(tam); datDemIm(); }
     if (xong.trim()) {
       const loi = xong.trim();
+      ghiKT("nghe ra: " + loi.slice(0, 50));
+      P.loiLienTiep = 0;
       hienLoiCu(loi);
       ghiLoi("cu", loi);
       const d = soanDap(loi);
@@ -684,14 +752,31 @@ function batMayNghe() {
     }
   };
   m.onerror = ev => {
+    ghiKT("máy nghe lỗi: " + ev.error);
+    if (ev.error !== "no-speech") P.loiLienTiep++;
+    demLoiNghe[ev.error] = (demLoiNghe[ev.error] || 0) + 1;
+    /* Máy ghi âm vẫn chạy thì đừng báo "không tìm thấy micro" — sai sự thật
+       và làm người nhà tưởng mất trắng, trong khi tiếng nói vẫn đang được giữ. */
+    if ((ev.error === "audio-capture" || ev.error === "network") && P.ghi && P.ghi.state === "recording") {
+      canhBaoNghe(ev.error);
+      return;
+    }
     const g = giaiThichLoiNghe(ev.error);
     if (g) baoLoi(g);
     if (ev.error === "not-allowed" || ev.error === "service-not-allowed") dungHan();
   };
   m.onend = () => {
-    if (P.chay && !P.tam && !P.dangNoi) { try { m.start(); } catch (e) {} }
+    if (!P.chay || P.tam || P.dangNoi) return;
+    /* Hỏng liên tục thì giãn dần ra, đừng khởi động lại mấy chục lần mỗi
+       giây — vừa vô ích vừa ngốn pin điện thoại. Ghi âm vẫn chạy song song. */
+    const cho = P.loiLienTiep >= 3 ? Math.min(30000, 1500 * P.loiLienTiep) : 0;
+    if (cho) ghiKT("chờ " + Math.round(cho / 1000) + "s rồi thử nghe lại");
+    setTimeout(() => {
+      if (!P.chay || P.tam || P.dangNoi) return;
+      try { m.start(); } catch (e) { ghiKT("chạy lại máy nghe hỏng: " + e.message); }
+    }, cho);
   };
-  try { m.start(); } catch (e) {}
+  try { m.start(); } catch (e) { ghiKT("không khởi động được máy nghe: " + e.message); }
 }
 
 async function batDauBuoi() {
@@ -709,9 +794,12 @@ async function batDauBuoi() {
   hienLoiCu(""); hienLoiApp("");
   $("#nutTam").textContent = "Tạm dừng";
 
+  ghiKT("=== bắt đầu buổi nói chuyện ===");
   try {
     P.luong = await navigator.mediaDevices.getUserMedia({ audio: true });
+    ghiKT("đã mở được micro");
   } catch (e) {
+    ghiKT("KHÔNG mở được micro: " + e.name);
     baoLoi("Chưa mở được micro. Hãy bấm “Cho phép” khi trình duyệt hỏi, hoặc bật quyền micro cho trang này trong cài đặt trình duyệt.");
     datTrangThai("Chưa nghe được", "");
     P.chay = false;
@@ -738,7 +826,8 @@ async function batDauBuoi() {
       };
       /* cắt thành mẩu 5 giây: nếu máy tắt đột ngột thì vẫn còn phần đã thu */
       P.ghi.start(5000);
-    } catch (e) { P.ghi = null; }
+      ghiKT("máy ghi âm đã chạy (" + P.kieuAm + ")");
+    } catch (e) { P.ghi = null; ghiKT("KHÔNG ghi âm được: " + e.message); }
   }
 
   const chao = thay(chonKhongLap(CHAO_DAU));
@@ -919,8 +1008,9 @@ function veDsBuoi() {
       String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") +
       " · nói " + dongHo(b.giay)));
     const cu = b.loi.filter(l => l.ai === "cu");
-    li.appendChild(el("div", "tom",
-      cu.length + " lượt kể" + (b.chuDe && b.chuDe.length ? " · " + b.chuDe.map(tenChuDe).join(", ") : "")));
+    li.appendChild(el("div", "tom", b.chuaNhanRaLoi
+      ? "Máy không nghe ra chữ, nhưng vẫn giữ được tiếng nói — bấm nghe lại bên dưới."
+      : cu.length + " lượt kể" + (b.chuDe && b.chuDe.length ? " · " + b.chuDe.map(tenChuDe).join(", ") : "")));
 
     if (b.am) {
       const ng = document.createElement("audio");
@@ -947,6 +1037,7 @@ function veDsBuoi() {
       if (li.querySelector(".ban-loi")) { li.querySelector(".ban-loi").remove(); return; }
       const h = el("div", "ban-loi");
       h.style.cssText = "margin-top:10px; font-size:.9rem; line-height:1.6";
+      if (!b.loi.length) h.appendChild(el("div", null, "(Máy không nghe ra chữ nào trong buổi này.)"));
       b.loi.forEach(l => {
         const p = el("div");
         p.style.cssText = "margin-top:6px" + (l.ai === "app" ? "; color:var(--accent)" : "; font-family:var(--serif); font-style:italic");
@@ -1023,6 +1114,9 @@ function veGocNha() {
   rieng("nhật ký trò chuyện", veDsBuoi);     // vẽ sớm, trước những thứ dễ hỏng hơn
   rieng("giọng nói", veDsGiong);
   rieng("kiểm tra micro", veTinMic);
+  rieng("nhật ký kỹ thuật", () => {
+    $("#kyThuat").value = KY_THUAT.slice(-120).join(String.fromCharCode(10));
+  });
   rieng("sao lưu", () => {
     $("#chep").value = JSON.stringify(Object.assign({}, S,
       { buoi: S.buoi.map(b => ({ d: b.d, giay: b.giay })) }));
@@ -1112,6 +1206,18 @@ $("#nutThem").onclick = async () => {
   $("#nTen").value = ""; $("#nQh").value = ""; $("#nAnh").value = "";
   delete $("#nGioi").dataset.tay;
   veDsNguoi(); veTrangChinh(); veDsGiong();
+};
+
+$("#nutChepKT").onclick = () => {
+  const t = $("#kyThuat"); t.select();
+  try { navigator.clipboard.writeText(t.value); } catch (e) { try { document.execCommand("copy"); } catch (e2) {} }
+  $("#nutChepKT").textContent = "Đã chép ✓";
+  setTimeout(() => $("#nutChepKT").textContent = "Chép nhật ký", 1800);
+};
+$("#nutXoaKT").onclick = () => {
+  KY_THUAT.length = 0;
+  try { localStorage.removeItem("chaunghe.kythuat"); } catch (e) {}
+  $("#kyThuat").value = "";
 };
 
 $("#nutChep").onclick = () => {

@@ -11,12 +11,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Cháu Nghe Kể">
-<meta name="ban-dung" content="22ce9667">
+<meta name="ban-dung" content="f0f4ad1c">
 <script>
 /* Trang và mã nguồn phải cùng một bản dựng. Máy giữ lẫn bản cũ bản mới thì
    giao diện hỏng ngầm — ví dụ nhật ký trò chuyện không hiện ra mà không báo gì.
    Lệch bản thì dọn sạch bộ đệm rồi tải lại đúng một lần. */
-window.__BAN_HTML = "22ce9667";
+window.__BAN_HTML = "f0f4ad1c";
 window.__tuChua = function () {
   try {
     if (sessionStorage.getItem("chaunghe.tuchua") === "1") return;
@@ -327,6 +327,17 @@ button{font:inherit; color:inherit; cursor:pointer}
       <h3>Những câu chuyện đã kể</h3>
       <p class="y">Mỗi buổi là một file âm thanh kèm lời ghi lại. Chỉ nằm trong máy này.</p>
       <ul class="ds-buoi" id="dsBuoi"></ul>
+    </div>
+
+    <div class="o">
+      <h3>Nhật ký kỹ thuật</h3>
+      <p class="y">Ghi lại máy đã làm gì trong buổi nói chuyện. Khi có trục trặc, mở mục này
+        và gửi nội dung cho người làm ứng dụng — nó cho biết hỏng ở đâu.</p>
+      <textarea class="bang-chep" id="kyThuat" readonly style="min-height:150px"></textarea>
+      <div class="hang" style="margin-top:10px">
+        <button class="nut-phu" id="nutChepKT" style="margin-top:0">Chép nhật ký</button>
+        <button class="nut-phu" id="nutXoaKT" style="margin-top:0">Xóa nhật ký</button>
+      </div>
     </div>
 
     <div class="o loi-ban">
