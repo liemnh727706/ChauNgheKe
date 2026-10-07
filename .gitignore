@@ -3,3 +3,7 @@ node_modules/
 *.iml
 .DS_Store
 Thumbs.db
+
+# file kiem thu, khong dua len web
+www/_thu.html
+www/_gia.js

@@ -356,13 +356,15 @@ function noi(text, xong) {
 const MayNghe = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 function canTroMic() {
-  if (location.protocol === "file:") return
-    "Mở trang thẳng từ file trong máy thì trình duyệt khóa micro và không hiện cửa sổ hỏi quyền. " +
-    "Cần mở bằng một địa chỉ bắt đầu bằng https.";
-  if (!window.isSecureContext) return
-    "Trang đang mở bằng http thường nên trình duyệt khóa micro. Cần địa chỉ https.";
-  if (!MayNghe) return
-    "Trình duyệt này không nghe được giọng nói. Hãy mở bằng Chrome (Android) hoặc Safari (iPhone).";
+  /* chuỗi phải nằm cùng dòng với return: xuống dòng là JavaScript tự chèn
+     dấu chấm phẩy và hàm trả về undefined, mọi phép kiểm coi như vô hiệu */
+  if (location.protocol === "file:")
+    return "Mở trang thẳng từ file trong máy thì trình duyệt khóa micro và không hiện cửa sổ hỏi quyền. " +
+           "Cần mở bằng một địa chỉ bắt đầu bằng https.";
+  if (!window.isSecureContext)
+    return "Trang đang mở bằng http thường nên trình duyệt khóa micro. Cần địa chỉ https.";
+  if (!MayNghe)
+    return "Trình duyệt này không nghe được giọng nói. Hãy mở bằng Chrome (Android) hoặc Safari (iPhone).";
   try {
     const cs = document.featurePolicy || document.permissionsPolicy;
     if (cs && cs.allowsFeature && !cs.allowsFeature("microphone")) return
@@ -472,8 +474,43 @@ async function luuRaFile(blob, ext, ngay, bao) {
 const P = {
   chay: false, tam: false, dangNoi: false,
   may: null, luong: null, ghi: null, manh: [],
-  batDau: 0, loi: [], chuDe: {}, demIm: null, phanTich: null, veSong: null
+  batDau: 0, loi: [], chuDe: {}, demIm: null, phanTich: null, veSong: null,
+  id: "", amId: "", demManh: 0, coAm: false, ext: "webm", kieuAm: ""
 };
+
+/* Lưu dần sau mỗi lượt, không đợi tới lúc bấm "Xong rồi".
+   Người già nói xong thường tắt máy hoặc bấm nút quay lại — nếu chỉ lưu
+   ở cuối thì cả buổi kể mất sạch. Ghi vào localStorage nên tức thì và
+   chạy được cả trong lúc trang đang đóng. */
+function luuBuoi(daXong) {
+  if (!P.id) return;
+  if (!P.loi.some(l => l.ai === "cu")) return;   // cụ chưa nói gì thì chưa có gì để lưu
+  const ban = {
+    id: P.id,
+    d: ngayKhoa(new Date(P.batDau)),
+    luc: new Date(P.batDau).toISOString(),
+    giay: Math.round((Date.now() - P.batDau) / 1000),
+    chuDe: Object.keys(P.chuDe),
+    loi: P.loi.slice(0, 400),
+    dangDo: !daXong
+  };
+  if (P.coAm) { ban.am = P.amId; ban.ext = P.ext; }
+  const i = S.buoi.findIndex(b => b.id === P.id);
+  if (i >= 0) S.buoi[i] = ban; else S.buoi.unshift(ban);
+  S.buoi = S.buoi.slice(0, 60);
+  luu();
+}
+
+/* Đổ tiếng nói đã thu được vào kho, định kỳ chứ không đợi tới cuối buổi */
+async function xaTiengNoi() {
+  if (!P.manh.length || !P.amId) return;
+  try {
+    const blob = new Blob(P.manh, { type: P.kieuAm || "audio/webm" });
+    await amLuu(P.amId, blob);
+    P.coAm = true; P.ext = duoiTu(blob.type);
+    luuBuoi(!P.chay);
+  } catch (e) {}
+}
 
 function datTrangThai(chu, kieu) {
   const t = $("#trangThai");
@@ -525,9 +562,13 @@ function datDemIm() {
   }, cho);
 }
 
-function ghiLoi(ai, text) { P.loi.push({ ai, text, giay: Math.round((Date.now() - P.batDau) / 1000) }); }
+function ghiLoi(ai, text) {
+  P.loi.push({ ai, text, giay: Math.round((Date.now() - P.batDau) / 1000) });
+  if (ai === "cu") luuBuoi(false);   // lưu ngay sau mỗi lượt cụ kể
+}
 
 function phatLoi(text, ketThuc) {
+  text = chuanHoa(text);   // lời chào và câu gợi chuyện cũng phải viết hoa đầu câu
   P.dangNoi = true;
   clearTimeout(P.demIm);
   datTrangThai((TEN() || "Cháu") + " đang nói…", "noi");
@@ -587,6 +628,8 @@ async function batDauBuoi() {
   veAnh($("#oAnhNoi"), nguoiDangChon(), true);
   P.chay = true; P.tam = false; P.dangNoi = false;
   P.loi = []; P.chuDe = {}; P.manh = []; P.batDau = Date.now();
+  P.id = "b" + P.batDau; P.amId = "am" + P.batDau;
+  P.demManh = 0; P.coAm = false; P.ext = "webm"; P.kieuAm = "";
   soLuot = 0; vuaHoi = false; daDung.length = 0;
   hienLoiCu(""); hienLoiApp("");
   $("#nutTam").textContent = "Tạm dừng";
@@ -611,8 +654,15 @@ async function batDauBuoi() {
   if (S.ghiAm && window.MediaRecorder) {
     try {
       P.ghi = new MediaRecorder(P.luong);
-      P.ghi.ondataavailable = ev => { if (ev.data && ev.data.size) P.manh.push(ev.data); };
-      P.ghi.start();
+      P.kieuAm = P.ghi.mimeType || "audio/webm";
+      P.ghi.ondataavailable = ev => {
+        if (!ev.data || !ev.data.size) return;
+        P.manh.push(ev.data);
+        P.demManh++;
+        if (P.demManh % 3 === 0) xaTiengNoi();   // cất tiếng nói mỗi ~15 giây
+      };
+      /* cắt thành mẩu 5 giây: nếu máy tắt đột ngột thì vẫn còn phần đã thu */
+      P.ghi.start(5000);
     } catch (e) { P.ghi = null; }
   }
 
@@ -644,22 +694,23 @@ async function ketThucBuoi() {
   }
   if (P.luong) { P.luong.getTracks().forEach(t => t.stop()); P.luong = null; }
 
-  const coLoi = P.loi.some(l => l.ai === "cu");
-  if (coLoi && giay > 5) {
-    const ban = { d: ngayKhoa(), luc: new Date().toISOString(), giay,
-                  chuDe: Object.keys(P.chuDe), loi: P.loi.slice(0, 400) };
-    if (P.manh.length) {
-      const blob = new Blob(P.manh, { type: (P.ghi && P.ghi.mimeType) || "audio/webm" });
-      const id = "b" + Date.now();
-      try { await amLuu(id, blob); ban.am = id; ban.ext = duoiTu(blob.type); } catch (e) {}
-    }
-    S.buoi.unshift(ban);
-    S.buoi = S.buoi.slice(0, 60);
-    luu();
-  }
-  P.ghi = null; P.manh = [];
+  await xaTiengNoi();
+  luuBuoi(true);
+  const daLuu = P.loi.some(l => l.ai === "cu");
+
+  P.ghi = null; P.manh = []; P.id = "";
   veTrangChinh();
   chuyenMan("chinh");
+  if (daLuu) khoeDaLuu(giay);
+}
+
+/* Cho người nhà thấy rõ là buổi nói chuyện đã được cất giữ */
+function khoeDaLuu(giay) {
+  const o = $("#daLuu");
+  o.hidden = false;
+  o.textContent = "✓ Đã lưu buổi nói chuyện " + dongHo(giay) + ". Nghe lại ở Góc người nhà.";
+  clearTimeout(khoeDaLuu.h);
+  khoeDaLuu.h = setTimeout(() => { o.hidden = true; }, 9000);
 }
 
 /* ===================================================================
@@ -926,8 +977,23 @@ $("#nutChep").onclick = () => {
   setTimeout(() => $("#nutChep").textContent = "Chép", 1800);
 };
 
+/* Thoát đột ngột: tắt máy, bấm nút quay lại, chuyển sang app khác.
+   Ghi vào localStorage là việc đồng bộ nên kịp chạy xong, còn tiếng nói
+   thì đã được cất định kỳ sẵn rồi. */
+function chotLai() {
+  if (!P.chay) return;
+  luuBuoi(false);
+  try { if (P.ghi && P.ghi.state === "recording") P.ghi.requestData(); } catch (e) {}
+  xaTiengNoi();
+}
+window.addEventListener("pagehide", chotLai);
+window.addEventListener("beforeunload", chotLai);
+
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden && P.chay && !P.tam) $("#nutTam").click();
+  if (document.hidden) {
+    chotLai();
+    if (P.chay && !P.tam) $("#nutTam").click();
+  }
 });
 
 /* ===================================================================
