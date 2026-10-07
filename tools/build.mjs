@@ -15,7 +15,7 @@ const www = path.join(goc, "www");
 fs.mkdirSync(www, { recursive: true });
 
 /* ---------- 1. chép mã nguồn ---------- */
-for (const f of ["index.html", "app.js"]) {
+for (const f of ["index.html", "app.js", "sw.js"]) {
   fs.copyFileSync(path.join(src, f), path.join(www, f));
 }
 
@@ -106,6 +106,10 @@ ok("co manifest va apple-touch-icon", /rel="manifest"/.test(html) && /rel="apple
 ok("co dang ky service worker", /serviceWorker\.register/.test(html));
 for (const f of ["manifest.webmanifest", "sw.js", "apple-touch-icon.png", "icon-192.png", "icon-512.png"])
   ok("co www/" + f, fs.existsSync(path.join(www, f)));
+
+const sw = fs.readFileSync(path.join(www, "sw.js"), "utf8");
+ok("sw.js lay ban moi tu mang cho trang va ma nguon",
+   /req\.mode === "navigate"/.test(sw) && /hayDoi\(url\)/.test(sw));
 
 try { new Function(js); ok("app.js khong loi cu phap", true); }
 catch (e) { ok("app.js LOI: " + e.message, false); }
