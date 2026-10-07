@@ -110,6 +110,8 @@ for (const f of ["manifest.webmanifest", "sw.js", "apple-touch-icon.png", "icon-
 const sw = fs.readFileSync(path.join(www, "sw.js"), "utf8");
 ok("sw.js lay ban moi tu mang cho trang va ma nguon",
    /req\.mode === "navigate"/.test(sw) && /hayDoi\(url\)/.test(sw));
+ok("sw.js bo qua ca dem HTTP cua trinh duyet",
+   /cache: "no-store"/.test(sw));
 
 try { new Function(js); ok("app.js khong loi cu phap", true); }
 catch (e) { ok("app.js LOI: " + e.message, false); }

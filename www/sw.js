@@ -7,7 +7,7 @@
  * dùng bản đã lưu. Nếu làm ngược lại thì mỗi bản sửa lỗi về sau sẽ không bao
  * giờ tới được máy người dùng — họ cứ chạy mãi bản cũ mà không biết.
  */
-const BAN = "chaunghe-v2";
+const BAN = "chaunghe-v3";
 const GIU = ["./", "./index.html", "./app.js", "./manifest.webmanifest",
              "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
@@ -51,9 +51,14 @@ self.addEventListener("fetch", e => {
   const nha = url.origin === self.location.origin;
 
   if (nha && (req.mode === "navigate" || hayDoi(url))) {
+    /* Phải kèm no-store: GitHub Pages đặt thời hạn 10 phút, nên nếu không
+       bảo trình duyệt bỏ qua đệm riêng của nó thì "ra mạng" vẫn chỉ nhận
+       lại bản cũ, và bản sửa lỗi lại không tới được người dùng. */
     e.respondWith(
-      fetch(req).then(res => catVao(req, res))
-                .catch(() => caches.match(req).then(co => co || caches.match("./index.html")))
+      fetch(req, { cache: "no-store" })
+        .catch(() => fetch(req))
+        .then(res => catVao(req, res))
+        .catch(() => caches.match(req).then(co => co || caches.match("./index.html")))
     );
     return;
   }
