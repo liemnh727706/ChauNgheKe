@@ -175,6 +175,18 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ba button{border:2px solid var(--line-strong); background:transparent; border-radius:12px;
   padding:12px 4px; font-weight:600; font-size:.95rem}
 .ba button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.nhom-cau{margin-top:14px}
+.nhom-cau > h4{font-size:.8rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); font-weight:700; margin:0 0 8px}
+.cau-ghi{display:flex; align-items:center; gap:10px; background:var(--surface-2);
+  border-radius:12px; padding:10px 12px; margin-top:8px}
+.cau-ghi .loi{flex:1; font-family:var(--serif); font-size:.95rem; line-height:1.45}
+.cau-ghi.xong{background:var(--accent-soft)}
+.cau-ghi .nut-ghi{border:2px solid var(--line-strong); background:var(--surface);
+  border-radius:10px; padding:9px 12px; font-size:.85rem; font-weight:700; white-space:nowrap}
+.cau-ghi .nut-ghi.dangGhi{background:var(--am); color:#fff; border-color:var(--am)}
+.cau-ghi .nut-nho{border:1px solid var(--line-strong); background:transparent;
+  border-radius:9px; padding:8px 10px; font-size:.8rem}
 .chip-giay{display:flex; flex-wrap:wrap; gap:8px}
 .chip-giay button{border:2px solid var(--line-strong); background:transparent;
   border-radius:999px; padding:10px 16px; font-weight:600; font-size:.95rem}
@@ -290,6 +302,22 @@ button{font:inherit; color:inherit; cursor:pointer}
     </div>
 
     <div class="o">
+      <h3>Giọng thật của <span id="tenGiongThat">người trò chuyện</span></h3>
+      <p class="y">Thu sẵn những câu ứng dụng hay nói, bằng chính giọng của người trong ảnh.
+        Cụ sẽ nghe đúng giọng con mình chứ không phải giọng máy. Ứng dụng tự ưu tiên câu
+        đã thu, nên chỉ cần thu nhóm đầu tiên là đã nghe được giọng thật khá nhiều.</p>
+      <p class="y">Có một số câu <b>không thu trước được</b>: những câu nhắc lại chính lời cụ
+        vừa nói, hoặc hỏi về người, nơi chốn cụ vừa kể — mỗi lần một khác. Những câu đó luôn
+        dùng giọng máy. Thu hết danh sách này thì khoảng một nửa số lượt đáp là giọng thật.</p>
+      <div class="hang">
+        <button class="nut-phu" id="nutBatGiongThat" style="margin-top:0" aria-pressed="true">
+          Dùng giọng thật: Bật</button>
+      </div>
+      <p class="y" id="tienDoGiong" style="margin-top:12px"></p>
+      <div id="dsCauGhi"></div>
+    </div>
+
+    <div class="o">
       <h3>Gọi cụ là gì</h3>
       <p class="y">Dùng đúng cách gọi trong nhà thì cụ dễ tin đây là người thật đang nói chuyện.</p>
       <div class="hang">
@@ -390,6 +418,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<script src="giongthat.js"></script>
 <script src="ngucanh.js"></script>
 <script src="kechuyen.js"></script>
 <script src="app.js"></script>

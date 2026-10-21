@@ -47,7 +47,7 @@ window.__BAN_JS = BAN_DUNG;
 
 const KHOA = "chaunghe.v1";
 const MAC_DINH = {
-  nguoi: [], chon: 0, goi: "bà", muc: "vua", giay: 0,   // giây chờ trước khi lên tiếng; 0 = theo mức sa sút
+  nguoi: [], chon: 0, goi: "bà", muc: "vua", giay: 0, giongThat: true,   // giây chờ trước khi lên tiếng; 0 = theo mức sa sút
   giong: "", ghiAm: true, buoi: []
 };
 let S = Object.assign({}, MAC_DINH);
@@ -57,7 +57,8 @@ function doc() {
   catch (e) {}
   /* người thêm từ trước chưa có giới tính — đoán theo quan hệ, mặc định là nữ */
   let doi = false;
-  S.nguoi.forEach(n => {
+  S.nguoi.forEach((n, i) => {
+    if (!n.id) { n.id = "p" + i + "_" + (n.ten || "").length + Date.now().toString(36).slice(-4); doi = true; }
     if (n.gioi) return;
     const t = boDau(n.qh || "");
     n.gioi = /(trai|re|cha|bo |anh |chu |cau |bac |ong|chong)/.test(t) ? "nam" : "nu";
@@ -319,6 +320,10 @@ let soLuot = 0;
 const daDung = [];       // tránh lặp lại y nguyên câu vừa nói
 
 function chonKhongLap(kho) {
+  /* Ưu tiên câu đã có giọng thật: thu mươi câu là phần lớn buổi nói chuyện
+     đã nghe được đúng giọng con mình. */
+  const coThat = kho.filter(coGhiMau);
+  if (coThat.length) kho = coThat;
   for (let i = 0; i < 8; i++) {
     const c = bocThan(kho);
     if (daDung.indexOf(c) < 0) { daDung.push(c); if (daDung.length > 12) daDung.shift(); return c; }
@@ -372,10 +377,57 @@ function soanDapTho(loi) {
   }
   vuaHoi = false;
 
-  /* Còn lại: nhắc lại lời cụ. Tiếng đệm suông chỉ dùng khi không
-     nhặt được cụm nào đáng nhắc — nhắc lại bao giờ cũng ấm hơn. */
-  if (cum) return nhacLai();
+  /* Còn lại: nhắc lại lời cụ, vì nhắc lại bao giờ cũng ấm hơn tiếng đệm suông.
+     Nhưng câu nhắc lại chứa chính lời cụ vừa nói nên không thu trước được —
+     nếu lúc nào cũng nhắc lại thì những câu đã thu bằng giọng thật chẳng bao
+     giờ được dùng. Có giọng thật thì chia đôi: một nửa nhắc lại, một nửa
+     tiếng đệm bằng đúng giọng con mình. */
+  if (cum && !(khoCoGhi(DAP_DEM) && Math.random() < 0.5)) return nhacLai();
   return { text: thay(chonKhongLap(DAP_DEM)), loai: "đệm", chuDe: cd };
+}
+
+/* Những câu app có thể nói sẵn — thu được giọng thật.
+   Câu nào chứa {K} {E} {C} thì không thu được, vì phần đó là lời cụ vừa nói,
+   mỗi lần một khác. Những câu đó vẫn dùng giọng máy. */
+function nhomCauGhi() {
+  const g = (ten, kho, uu) => ({ ten, cau: kho.map(m => chuanHoa(thay(m)))
+    .filter(c => c.indexOf("{") < 0), uu });
+  const hoiGop = [];
+  for (const k in HOI) hoiGop.push(...HOI[k]);
+  const ds = [
+    g("Lời chào mở đầu", CHAO_DAU, 1),
+    g("Mở đầu khi kể chuyện", (window.MO_DAU_KC || []), 1),
+    g("Tiếng đệm — dùng nhiều nhất", DAP_DEM, 1),
+    g("Nối chuyện khi cụ dừng", (window.NOI_TIEP_KC || []), 1),
+    g("Khích lệ cụ kể tiếp", DAP_KHICH_LE, 2),
+    g("Khi cụ vui", DAP_VUI, 2),
+    g("Khi cụ nhớ người đã mất", DAP_NHO, 2),
+    g("Khi cụ kể chuyện vất vả", DAP_VAT_VA, 2),
+    g("Khi cụ hỏi lại", DAP_HOI_LAI, 3),
+    g("Khi cụ hỏi mình là ai", DAP_LA_AI, 1),
+    g("Lúc chia tay", DAP_TAM_BIET, 2),
+    g("Gợi chuyện khi im lặng", MOI_CHUYEN, 3),
+    g("Nhắc nhẹ khi cụ im lâu", (window.LANG_LAU_KC || []), 3),
+    g("Hỏi nối chuyện", hoiGop, 4)
+  ];
+  return ds.filter(x => x.cau.length).sort((a, b) => a.uu - b.uu);
+}
+
+function tatCaCauGhi() {
+  const ra = [];
+  nhomCauGhi().forEach(n => ra.push(...n.cau));
+  return [...new Set(ra)];
+}
+
+/* Trong kho mẫu này có câu nào đã thu giọng thật chưa */
+function khoCoGhi(kho) { return !!(kho && kho.some(coGhiMau)); }
+
+/* Có sẵn giọng thật cho mẫu câu này không (mẫu chưa thay xưng hô) */
+function coGhiMau(mau) {
+  const ng = nguoiDangChon();
+  if (!ng || !ng.id || !window.GiongThat || !S.giongThat) return false;
+  const c = chuanHoa(thay(mau));
+  return c.indexOf("{") < 0 && GiongThat.co(ng.id, c);
 }
 
 /* ===================================================================
@@ -439,6 +491,27 @@ function noi(text, xong) {
     ghiKT("đọc xong (" + vi + ")");
     if (xong) xong();
   };
+  /* Có thu sẵn giọng thật của người trò chuyện thì phát giọng thật,
+     không dùng giọng máy. Đây mới là thứ cụ nhận ra. */
+  const ngNoi = nguoiDangChon();
+  if (S.giongThat && ngNoi && ngNoi.id && window.GiongThat && GiongThat.co(ngNoi.id, text)) {
+    GiongThat.lay(ngNoi.id, text).then(blob => {
+      if (!blob) { doc(); return; }
+      try {
+        const au = new Audio(URL.createObjectURL(blob));
+        au.onended = () => chot("giọng thật");
+        au.onerror = () => doc();
+        ghiKT("phát giọng thật: " + text.slice(0, 36));
+        const p = au.play();
+        if (p && p.catch) p.catch(() => doc());
+        setTimeout(() => chot("giọng thật quá giờ"), Math.max(4000, text.length * 130 + 2500));
+      } catch (e) { doc(); }
+    }).catch(doc);
+    return;
+  }
+  doc();
+
+  function doc() {
   if (!sp) { ghiKT("máy không có bộ đọc"); chot("không có bộ đọc"); return; }
   try {
     sp.cancel();
@@ -457,6 +530,7 @@ function noi(text, xong) {
   } catch (e) {
     ghiKT("bộ đọc ném lỗi: " + e.message);
     chot("ném lỗi");
+  }
   }
 }
 
@@ -815,7 +889,7 @@ async function batDauBuoi(cheDo) {
   P.cheDo = cheDo === "keChuyen" ? "keChuyen" : "hoiDap";
   P.caChuyen = []; P.lucCoTieng = Date.now();
   P.may2 = P.cheDo === "keChuyen"
-    ? new MayKeChuyen({ muc: S.muc, nguongTay: S.giay, thay, chuanHoa })
+    ? new MayKeChuyen({ muc: S.muc, nguongTay: S.giay, thay, chuanHoa, coGhi: coGhiMau })
     : null;
   $("#nhanCheDo").hidden = P.cheDo !== "keChuyen";
   veCaChuyen();
@@ -1037,6 +1111,103 @@ function veChonGiay() {
       ({ nhe: "nhẹ", vua: "vừa", nang: "nặng" }[S.muc] || "vừa") + ".";
 }
 
+/* ---- Thu giọng thật cho từng câu ---- */
+let dangThu = null;          // { cau, may, luong, nut }
+
+async function thuCau(cau, nut, ve) {
+  if (dangThu) { await dungThu(); if (dangThu && dangThu.cau === cau) return; }
+  const ng = nguoiDangChon();
+  if (!ng) return;
+  const tro = canTroMic();
+  if (tro) { alert(tro); return; }
+
+  let luong;
+  try { luong = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { alert("Chưa mở được micro. Hãy cho phép dùng micro rồi thử lại."); return; }
+
+  let may;
+  try { may = new MediaRecorder(luong); }
+  catch (e) { luong.getTracks().forEach(t => t.stop()); return; }
+
+  const manh = [];
+  may.ondataavailable = ev => { if (ev.data && ev.data.size) manh.push(ev.data); };
+  may.onstop = async () => {
+    luong.getTracks().forEach(t => t.stop());
+    dangThu = null;
+    if (manh.length) {
+      try {
+        await GiongThat.luu(ng.id, cau, new Blob(manh, { type: may.mimeType || "audio/webm" }));
+        ghiKT("đã thu giọng thật: " + cau.slice(0, 36));
+      } catch (e) { alert("Không lưu được bản thu."); }
+    }
+    ve();
+  };
+  dangThu = { cau, may, luong, nut };
+  may.start();
+  nut.textContent = "⏹ Dừng";
+  nut.classList.add("dangGhi");
+  /* không ai đọc một câu lâu hơn 20 giây — tự dừng cho khỏi quên */
+  dangThu.hen = setTimeout(() => dungThu(), 20000);
+}
+
+function dungThu() {
+  if (!dangThu) return Promise.resolve();
+  clearTimeout(dangThu.hen);
+  try { if (dangThu.may.state === "recording") dangThu.may.stop(); } catch (e) {}
+  return new Promise(r => setTimeout(r, 120));
+}
+
+function veDsCauGhi() {
+  const o = $("#dsCauGhi");
+  if (!o) return;
+  const ng = nguoiDangChon();
+  const nhan = $("#tenGiongThat");
+  if (nhan) nhan.textContent = ng ? ng.ten : "người trò chuyện";
+
+  o.innerHTML = "";
+  if (!ng) { o.appendChild(el("p", "y", "Chưa chọn người trò chuyện.")); return; }
+
+  const nhom = nhomCauGhi();
+  const tong = tatCaCauGhi().length;
+  const daCo = tatCaCauGhi().filter(c => GiongThat.co(ng.id, c)).length;
+  const td = $("#tienDoGiong");
+  if (td) {
+    td.textContent = daCo
+      ? "Đã thu " + daCo + "/" + tong + " câu bằng giọng " + ng.ten +
+        ". Những câu chưa thu vẫn dùng giọng máy."
+      : "Chưa thu câu nào. Bấm 🎙 bên cạnh một câu rồi đọc đúng câu đó.";
+    td.style.color = daCo ? "var(--good)" : "var(--muted)";
+  }
+
+  nhom.forEach(n => {
+    const kh = el("div", "nhom-cau");
+    const soXong = n.cau.filter(c => GiongThat.co(ng.id, c)).length;
+    kh.appendChild(el("h4", null, n.ten + " (" + soXong + "/" + n.cau.length + ")"));
+    n.cau.forEach(cau => {
+      const co = GiongThat.co(ng.id, cau);
+      const d = el("div", "cau-ghi" + (co ? " xong" : ""));
+      d.appendChild(el("div", "loi", (co ? "✓ " : "") + cau));
+      const bThu = el("button", "nut-ghi", co ? "Thu lại" : "🎙 Thu");
+      bThu.onclick = () => thuCau(cau, bThu, veDsCauGhi);
+      d.appendChild(bThu);
+      if (co) {
+        const bNghe = el("button", "nut-nho", "▶");
+        bNghe.title = "Nghe lại";
+        bNghe.onclick = async () => {
+          const b = await GiongThat.lay(ng.id, cau).catch(() => null);
+          if (b) new Audio(URL.createObjectURL(b)).play().catch(() => {});
+        };
+        const bXoa = el("button", "nut-nho", "🗑");
+        bXoa.title = "Xóa bản thu";
+        bXoa.onclick = async () => { await GiongThat.xoa(ng.id, cau); veDsCauGhi(); };
+        d.appendChild(bNghe); d.appendChild(bXoa);
+      }
+      kh.appendChild(d);
+    });
+    o.appendChild(kh);
+  });
+}
+
 function veDsGiong() {
   const s = $("#nGiong");
   if (!s) return;
@@ -1229,11 +1400,16 @@ function veGocNha() {
     $("#taMuc").textContent = TA_MUC[S.muc];
     $("#nGoi").value = S.goi;
   });
+  rieng("bật tắt giọng thật", () => {
+    $("#nutBatGiongThat").textContent = "Dùng giọng thật: " + (S.giongThat ? "Bật" : "Tắt");
+    $("#nutBatGiongThat").setAttribute("aria-pressed", String(S.giongThat));
+  });
   rieng("ghi âm", () => {
     $("#nutGhiAm").textContent = "Tự ghi âm buổi nói chuyện: " + (S.ghiAm ? "Bật" : "Tắt");
     $("#nutGhiAm").setAttribute("aria-pressed", String(S.ghiAm));
   });
   rieng("ngưỡng dừng", veChonGiay);
+  rieng("giọng thật", veDsCauGhi);
   rieng("danh sách người", veDsNguoi);
   rieng("nhật ký trò chuyện", veDsBuoi);     // vẽ sớm, trước những thứ dễ hỏng hơn
   rieng("giọng nói", veDsGiong);
@@ -1298,6 +1474,12 @@ document.querySelectorAll("#baMuc button").forEach(b => {
   b.onclick = () => { S.muc = b.dataset.m; luu(); veGocNha(); };
 });
 $("#nGoi").onchange = e => { S.goi = e.target.value; luu(); veTrangChinh(); };
+$("#nutBatGiongThat").onclick = () => {
+  S.giongThat = !S.giongThat; luu();
+  $("#nutBatGiongThat").textContent = "Dùng giọng thật: " + (S.giongThat ? "Bật" : "Tắt");
+  $("#nutBatGiongThat").setAttribute("aria-pressed", String(S.giongThat));
+};
+
 $("#nGiay").oninput = e => {
   const v = Math.round(Number(e.target.value));
   /* để trống thì quay về tự động; ngoài khoảng thì kẹp lại cho khỏi vô lý */
@@ -1337,7 +1519,7 @@ $("#nutThem").onclick = async () => {
   const f = $("#nAnh").files[0];
   let anh = null;
   if (f) { try { anh = await thuNho(f, 480); } catch (e) { anh = null; } }
-  S.nguoi.push({ ten, qh, xung, gioi, anh, giong: "" });
+  S.nguoi.push({ id: "p" + Date.now().toString(36), ten, qh, xung, gioi, anh, giong: "" });
   S.chon = S.nguoi.length - 1;
   luu();
   $("#nTen").value = ""; $("#nQh").value = ""; $("#nAnh").value = "";

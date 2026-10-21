@@ -80,6 +80,7 @@ function MayKeChuyen(tuyChon) {
   this.nc = new global.HieuNguCanh();
   this.muc = tuyChon.muc || "vua";
   this.nguongTay = Number(tuyChon.nguongTay) || 0;   // giây; 0 = theo mức sa sút
+  this.coGhi = tuyChon.coGhi || null;
   this.thay = tuyChon.thay;             // đổi {X} {G} thành xưng hô thật
   this.chuanHoa = tuyChon.chuanHoa || (s => s);
   this.soLanDap = 0;
@@ -104,6 +105,11 @@ MayKeChuyen.prototype.nguongLang = function () {
 };
 
 MayKeChuyen.prototype.chon = function (kho) {
+  /* ưu tiên câu đã thu sẵn bằng giọng thật của người trò chuyện */
+  if (this.coGhi) {
+    const that = kho.filter(this.coGhi);
+    if (that.length) kho = that;
+  }
   for (let i = 0; i < 8; i++) {
     const c = kho[Math.floor(Math.random() * kho.length)];
     if (this.daDung.indexOf(c) < 0) {
@@ -159,8 +165,11 @@ MayKeChuyen.prototype.dapKhiDung = function () {
   }
 
   /* Nhắc lại cụm cuối — cho cụ thấy mình đang nghe thật, không phải ậm ừ */
+  /* Câu nhắc lại chứa lời cụ nên không thu trước được; có sẵn giọng thật cho
+     câu nối chuyện thì bớt nhắc lại đi để cụ được nghe giọng con mình. */
+  const coThat = this.coGhi && NOI_TIEP.some(this.coGhi);
   const cum = this.nc.cumCuoi;
-  if (cum && cum.split(/\s+/).length >= 2 && Math.random() < 0.45) {
+  if (cum && cum.split(/\s+/).length >= 2 && Math.random() < (coThat ? 0.2 : 0.45)) {
     return {
       text: this.chuanHoa(this.thay(this.chon(NHAC_LAI)).replace(/\{C\}/g, cum.toLowerCase())),
       loai: "nhắc lại",
@@ -174,5 +183,9 @@ MayKeChuyen.prototype.dapKhiDung = function () {
 MayKeChuyen.prototype.tomTat = function () { return this.nc.tomTat(); };
 
 global.MayKeChuyen = MayKeChuyen;
+/* mở ra để phần thu giọng thật liệt kê được những câu này */
+global.MO_DAU_KC = MO_DAU;
+global.NOI_TIEP_KC = NOI_TIEP;
+global.LANG_LAU_KC = LANG_LAU;
 
 })(typeof window !== "undefined" ? window : globalThis);

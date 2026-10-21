@@ -20,7 +20,7 @@ fs.mkdirSync(www, { recursive: true });
    mới thì giao diện hỏng ngầm, nên mỗi bản dựng mang một mã riêng; lệch
    mã thì ứng dụng tự dọn bộ đệm và tải lại. */
 const nguon = {};
-const TEP = ["index.html", "app.js", "sw.js", "ngucanh.js", "kechuyen.js"];
+const TEP = ["index.html", "app.js", "sw.js", "ngucanh.js", "kechuyen.js", "giongthat.js"];
 for (const f of TEP) nguon[f] = fs.readFileSync(path.join(src, f), "utf8");
 const BAN = crypto.createHash("sha1")
   .update(TEP.map(f => nguon[f]).join(""))
@@ -115,7 +115,7 @@ ok("co [hidden] display:none !important", /\[hidden\]\{display:none !important\}
 ok("co manifest va apple-touch-icon", /rel="manifest"/.test(html) && /rel="apple-touch-icon"/.test(html));
 /* có sw.js không đủ — phải có chỗ đăng ký, nếu không file đó nằm chơi */
 ok("co dang ky service worker", /serviceWorker\.register/.test(html));
-for (const f of ["manifest.webmanifest", "sw.js", "ngucanh.js", "kechuyen.js", "apple-touch-icon.png", "icon-192.png", "icon-512.png"])
+for (const f of ["manifest.webmanifest", "sw.js", "ngucanh.js", "kechuyen.js", "giongthat.js", "apple-touch-icon.png", "icon-192.png", "icon-512.png"])
   ok("co www/" + f, fs.existsSync(path.join(www, f)));
 
 const sw = fs.readFileSync(path.join(www, "sw.js"), "utf8");
@@ -137,6 +137,9 @@ ok("co bo hieu ngu canh va may ke chuyen",
 ok("che do ke chuyen chi gom lai, khong dap ngay",
    /P\.cheDo === "keChuyen"[\s\S]{0,200}P\.caChuyen\.push/.test(js));
 ok("co bo canh im lang rieng cho che do ke chuyen", /function batCanhDung/.test(js));
+ok("co kho giong that", fs.existsSync(path.join(www, "giongthat.js")) && /GiongThat/.test(js));
+ok("phat giong that truoc khi dung giong may", /GiongThat\.co\(ngNoi\.id, text\)/.test(js));
+ok("uu tien chon cau da thu giong that", /kho\.filter\(coGhiMau\)/.test(js));
 ok("dat tay duoc nguong dung", /nguongTay/.test(kc) && /id="nGiay"/.test(html) && /veChonGiay/.test(js));
 ok("nguong im lau luon lon hon nguong dung", /nguongDung\(\) \+ 8000/.test(kc));
 ok("tu nghe lai khi quay ve man hinh", /tamTuDong/.test(js));

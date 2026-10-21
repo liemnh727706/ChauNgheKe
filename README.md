@@ -66,6 +66,27 @@ và không bao giờ bịa ra chi tiết gia đình.
 Hai quy tắc cứng: **không bao giờ cải chính cụ**, và **không hỏi hai lượt liền**
 (hỏi dồn thành ra hỏi cung). Mức sa sút càng nặng thì nói càng chậm, càng ít hỏi.
 
+## Giọng thật của người trò chuyện
+
+Không nhân bản giọng bằng AI. Muốn tổng hợp giọng thật nói câu bất kỳ thì phải
+gửi giọng lên dịch vụ trả phí, chờ vài giây mỗi câu — độ trễ đó phá hỏng cảm
+giác đang nói chuyện, và giọng cả đời người lại rời khỏi máy.
+
+Cách làm ở đây thật hơn: ứng dụng chỉ nói một số câu hữu hạn và biết trước
+(90 câu), nên người con **thu sẵn chính những câu đó**. Cụ nghe được đúng giọng
+con mình, không phải giọng bắt chước.
+
+Ứng dụng tự **ưu tiên chọn câu đã thu**, nên thu ít vẫn nghe được nhiều: đo thực
+tế, thu 8 câu tiếng đệm đã cho **40%** số lượt đáp bằng giọng thật.
+
+Thu hết 90 câu thì lên khoảng **50%** (chế độ trò chuyện) và **40%** (chế độ kể
+chuyện). Phần còn lại không bao giờ thu trước được, vì đó chính là những câu
+chứa lời cụ vừa nói — *"À, má đi chợ Tầm Vu ạ"*, *"Bà Tư là người thế nào hả
+má?"*. Nghịch lý nhỏ: những câu nghe ra là đang lắng nghe nhất lại là những câu
+buộc phải dùng giọng máy.
+
+Mỗi người trò chuyện có kho giọng riêng. Tiếng nói để trong máy, không gửi đi đâu.
+
 ## Cấu trúc
 
 ```
