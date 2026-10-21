@@ -47,7 +47,7 @@ window.__BAN_JS = BAN_DUNG;
 
 const KHOA = "chaunghe.v1";
 const MAC_DINH = {
-  nguoi: [], chon: 0, goi: "bà", muc: "vua",
+  nguoi: [], chon: 0, goi: "bà", muc: "vua", giay: 0,   // giây chờ trước khi lên tiếng; 0 = theo mức sa sút
   giong: "", ghiAm: true, buoi: []
 };
 let S = Object.assign({}, MAC_DINH);
@@ -814,7 +814,9 @@ async function batDauBuoi(cheDo) {
   P.id = "b" + P.batDau; P.amId = "am" + P.batDau;
   P.cheDo = cheDo === "keChuyen" ? "keChuyen" : "hoiDap";
   P.caChuyen = []; P.lucCoTieng = Date.now();
-  P.may2 = P.cheDo === "keChuyen" ? new MayKeChuyen({ muc: S.muc, thay, chuanHoa }) : null;
+  P.may2 = P.cheDo === "keChuyen"
+    ? new MayKeChuyen({ muc: S.muc, nguongTay: S.giay, thay, chuanHoa })
+    : null;
   $("#nhanCheDo").hidden = P.cheDo !== "keChuyen";
   veCaChuyen();
   P.demManh = 0; P.coAm = false; P.ext = "webm"; P.kieuAm = "";
@@ -1007,6 +1009,33 @@ const TA_MUC = {
   vua: "Vừa — nói chậm hơn, hỏi ít lại, nhắc lại lời cụ nhiều hơn để cụ biết mình đang được nghe.",
   nang: "Nặng — nói rất chậm, câu ngắn, gần như không hỏi. Chủ yếu là tiếng đệm và lời trấn an."
 };
+
+const GIAY_SAN = [3, 5, 8, 10, 15];
+
+function veChonGiay() {
+  const o = $("#chipGiay");
+  if (!o) return;
+  o.innerHTML = "";
+  const lam = (giay, nhan) => {
+    const b = el("button", null, nhan);
+    b.setAttribute("aria-pressed", String(S.giay === giay));
+    b.onclick = () => { S.giay = giay; luu(); veChonGiay(); };
+    o.appendChild(b);
+  };
+  lam(0, "Tự động");
+  GIAY_SAN.forEach(g => lam(g, g + " giây"));
+
+  const nhap = $("#nGiay");
+  if (nhap) nhap.value = (S.giay && GIAY_SAN.indexOf(S.giay) < 0) ? S.giay : "";
+
+  const mac = { nhe: 2.6, vua: 3.2, nang: 4 }[S.muc] || 3.2;
+  const t = $("#taGiay");
+  if (!t) return;
+  t.textContent = S.giay > 0
+    ? "Ứng dụng chờ " + S.giay + " giây im lặng rồi mới lên tiếng. Trong lúc cụ còn đang kể thì tuyệt đối im."
+    : "Đang để tự động: chờ " + String(mac).replace(".", ",") + " giây theo mức " +
+      ({ nhe: "nhẹ", vua: "vừa", nang: "nặng" }[S.muc] || "vừa") + ".";
+}
 
 function veDsGiong() {
   const s = $("#nGiong");
@@ -1204,6 +1233,7 @@ function veGocNha() {
     $("#nutGhiAm").textContent = "Tự ghi âm buổi nói chuyện: " + (S.ghiAm ? "Bật" : "Tắt");
     $("#nutGhiAm").setAttribute("aria-pressed", String(S.ghiAm));
   });
+  rieng("ngưỡng dừng", veChonGiay);
   rieng("danh sách người", veDsNguoi);
   rieng("nhật ký trò chuyện", veDsBuoi);     // vẽ sớm, trước những thứ dễ hỏng hơn
   rieng("giọng nói", veDsGiong);
@@ -1268,6 +1298,17 @@ document.querySelectorAll("#baMuc button").forEach(b => {
   b.onclick = () => { S.muc = b.dataset.m; luu(); veGocNha(); };
 });
 $("#nGoi").onchange = e => { S.goi = e.target.value; luu(); veTrangChinh(); };
+$("#nGiay").oninput = e => {
+  const v = Math.round(Number(e.target.value));
+  /* để trống thì quay về tự động; ngoài khoảng thì kẹp lại cho khỏi vô lý */
+  S.giay = (!v || v < 2) ? 0 : Math.min(60, v);
+  luu();
+  document.querySelectorAll("#chipGiay button").forEach(b => b.setAttribute("aria-pressed", "false"));
+  const t = $("#taGiay");
+  if (t && S.giay > 0) t.textContent = "Ứng dụng chờ " + S.giay + " giây im lặng rồi mới lên tiếng.";
+};
+$("#nGiay").onchange = () => veChonGiay();
+
 $("#nGiong").onchange = e => {
   const ng = nguoiDangChon();
   if (ng) { ng.giong = e.target.value; luu(); veDsGiong(); }

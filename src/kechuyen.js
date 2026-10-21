@@ -79,6 +79,7 @@ const MO_DAU = [
 function MayKeChuyen(tuyChon) {
   this.nc = new global.HieuNguCanh();
   this.muc = tuyChon.muc || "vua";
+  this.nguongTay = Number(tuyChon.nguongTay) || 0;   // giây; 0 = theo mức sa sút
   this.thay = tuyChon.thay;             // đổi {X} {G} thành xưng hô thật
   this.chuanHoa = tuyChon.chuanHoa || (s => s);
   this.soLanDap = 0;
@@ -87,8 +88,20 @@ function MayKeChuyen(tuyChon) {
   this.chuaDap = "";                    // phần cụ kể mà app chưa đáp lời nào
 }
 
-MayKeChuyen.prototype.nguongDung = function () { return NGUONG_DUNG[this.muc] || NGUONG_DUNG.vua; };
-MayKeChuyen.prototype.nguongLang = function () { return NGUONG_LANG[this.muc] || NGUONG_LANG.vua; };
+/* Người nhà đặt tay được bao nhiêu giây thì dùng con số đó; để 0 thì theo mức
+   sa sút. Nhịp kể mỗi cụ mỗi khác — có cụ nghỉ lấy hơi tới cả chục giây giữa
+   chừng, chờ không đủ lâu là app cắt ngang ngay giữa câu chuyện. */
+MayKeChuyen.prototype.nguongDung = function () {
+  if (this.nguongTay > 0) return this.nguongTay * 1000;
+  return NGUONG_DUNG[this.muc] || NGUONG_DUNG.vua;
+};
+
+/* Ngưỡng "im quá lâu" luôn phải lớn hơn ngưỡng dừng, nếu không app sẽ giục
+   trước cả khi kịp hỏi theo ngữ cảnh. */
+MayKeChuyen.prototype.nguongLang = function () {
+  const mac = NGUONG_LANG[this.muc] || NGUONG_LANG.vua;
+  return Math.max(mac, this.nguongDung() + 8000);
+};
 
 MayKeChuyen.prototype.chon = function (kho) {
   for (let i = 0; i < 8; i++) {

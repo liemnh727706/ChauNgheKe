@@ -30,8 +30,11 @@ khi cụ dừng hẳn vài giây. Hợp khi cụ còn kể được dài.
 
 Chế độ kể chuyện làm ba việc:
 
-1. **Không cắt ngang.** Dừng dưới ngưỡng (2,6s mức nhẹ · 3,2s vừa · 4s nặng)
-   thì tuyệt đối im. Nghỉ lấy hơi giữa câu không bị tính là kể xong.
+1. **Không cắt ngang.** Dừng dưới ngưỡng thì tuyệt đối im — nghỉ lấy hơi giữa
+   câu không bị tính là kể xong. Ngưỡng tự động theo mức sa sút (2,6s nhẹ ·
+   3,2s vừa · 4s nặng), nhưng **đặt tay được** trong Góc người nhà: chọn nhanh
+   3/5/8/10/15 giây hoặc gõ số bất kỳ từ 2 đến 60. Cụ nào hay ngẫm nghĩ giữa
+   chừng thì nên đặt dài ra.
 2. **Hỏi theo đúng chuyện vừa kể**, không phải câu soạn sẵn. Cụ nhắc "bà Tư"
    thì hỏi *"Bà Tư là người thế nào hả má?"*; nhắc "chợ Tầm Vu" thì hỏi
    *"Chợ Tầm Vu có đông người không má?"*. Câu hỏi chứa chính lời cụ nói —

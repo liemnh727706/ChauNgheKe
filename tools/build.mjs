@@ -137,6 +137,8 @@ ok("co bo hieu ngu canh va may ke chuyen",
 ok("che do ke chuyen chi gom lai, khong dap ngay",
    /P\.cheDo === "keChuyen"[\s\S]{0,200}P\.caChuyen\.push/.test(js));
 ok("co bo canh im lang rieng cho che do ke chuyen", /function batCanhDung/.test(js));
+ok("dat tay duoc nguong dung", /nguongTay/.test(kc) && /id="nGiay"/.test(html) && /veChonGiay/.test(js));
+ok("nguong im lau luon lon hon nguong dung", /nguongDung\(\) \+ 8000/.test(kc));
 ok("tu nghe lai khi quay ve man hinh", /tamTuDong/.test(js));
 
 ok("nhat ky tro chuyen duoc ve rieng, khong bi phan khac keo nga",
